@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentStatus
@@ -120,7 +121,9 @@ fun CalendarScreen(
                 outlined = true
             ) {
                 Column(
-                    modifier = Modifier.padding(FlintTheme.spacing.large),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(FlintTheme.spacing.large),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
@@ -128,12 +131,16 @@ fun CalendarScreen(
                         text = "No scheduled publications yet.",
                         style = FlintTheme.typography.titleLarge,
                         color = FlintTheme.colors.primary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Text(
                         text = "Schedule generated posts from your Spark workspace or Content Library to see them on your calendar timeline.",
                         style = FlintTheme.typography.bodyMedium,
-                        color = FlintTheme.colors.textSecondary
+                        color = FlintTheme.colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                     FlintButton(
                         onClick = { navigationManager.navigateTo(FlintScreen.Create) },

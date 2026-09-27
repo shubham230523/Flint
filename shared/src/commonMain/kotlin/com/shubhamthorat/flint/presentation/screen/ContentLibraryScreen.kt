@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentRepository
@@ -63,7 +64,7 @@ fun ContentLibraryScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(FlintTheme.spacing.medium),
-        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
+        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.large)
     ) {
         Text(
             text = "Content Library",
@@ -104,20 +105,26 @@ fun ContentLibraryScreen(
                 outlined = true
             ) {
                 Column(
-                    modifier = Modifier.padding(FlintTheme.spacing.large),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = FlintTheme.spacing.extraLarge, horizontal = FlintTheme.spacing.large),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
                 ) {
                     Text(
                         text = "Your content library is empty.",
                         style = FlintTheme.typography.titleLarge,
                         color = FlintTheme.colors.primary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Text(
                         text = "Generate your first campaign in the Spark workspace to populate your library.",
                         style = FlintTheme.typography.bodyMedium,
-                        color = FlintTheme.colors.textSecondary
+                        color = FlintTheme.colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                     FlintButton(
                         onClick = { navigationManager.navigateTo(FlintScreen.Create) },

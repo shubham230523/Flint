@@ -1,6 +1,7 @@
 package com.shubhamthorat.flint.presentation.component
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +22,8 @@ fun FlintTextField(
     placeholder: String? = null,
     errorText: String? = null,
     singleLine: Boolean = true,
+    minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null
@@ -31,11 +34,13 @@ fun FlintTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = if (singleLine) Modifier.fillMaxWidth() else Modifier.fillMaxSize(),
             label = label?.let { { Text(it, style = FlintTheme.typography.bodyMedium) } },
             placeholder = placeholder?.let { { Text(it, style = FlintTheme.typography.bodyMedium) } },
             isError = errorText != null,
             singleLine = singleLine,
+            minLines = minLines,
+            maxLines = maxLines,
             visualTransformation = visualTransformation,
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,

@@ -97,7 +97,10 @@ fun CreateSparkScreen(
                     onValueChange = { sourceText = it },
                     placeholder = "Paste raw idea, blog URL, video transcript, or document text...",
                     singleLine = false,
-                    modifier = Modifier.fillMaxWidth().height(120.dp)
+                    minLines = 6,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
                 )
             }
         }

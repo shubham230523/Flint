@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.shubhamthorat.flint.domain.repository.SourceItem
 import com.shubhamthorat.flint.domain.repository.SourceRepository
 import com.shubhamthorat.flint.domain.repository.SourceType
@@ -107,7 +108,9 @@ fun IdeaEngineScreen(
                 outlined = true
             ) {
                 Column(
-                    modifier = Modifier.padding(FlintTheme.spacing.large),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(FlintTheme.spacing.large),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
@@ -115,12 +118,16 @@ fun IdeaEngineScreen(
                         text = "Your idea inbox is empty.",
                         style = FlintTheme.typography.titleLarge,
                         color = FlintTheme.colors.primary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Text(
                         text = "Type a shower thought, link, or topic above to save it for your next spark campaign.",
                         style = FlintTheme.typography.bodyMedium,
-                        color = FlintTheme.colors.textSecondary
+                        color = FlintTheme.colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
