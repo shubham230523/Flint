@@ -9,6 +9,7 @@ import com.shubhamthorat.flint.domain.repository.AiResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
+import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
@@ -28,12 +29,12 @@ import kotlinx.serialization.json.Json
 @Serializable
 private data class OpenRouterRequest(
     val model: String,
-    val messages: List<OpenRouterMessage>,
-    val stream: Boolean = true
+    val messages: List<OpenRouterMessageRequest>,
+    val stream: Boolean = false
 )
 
 @Serializable
-private data class OpenRouterMessage(
+private data class OpenRouterMessageRequest(
     val role: String,
     val content: String
 )
@@ -48,9 +49,17 @@ private data class OpenRouterResponse(
 
 @Serializable
 private data class OpenRouterChoice(
-    val message: OpenRouterMessage? = null,
-    val delta: OpenRouterMessage? = null,
+    val message: OpenRouterMessageResponse? = null,
+    val delta: OpenRouterMessageResponse? = null,
     @SerialName("finish_reason") val finishReason: String? = null
+)
+
+@Serializable
+private data class OpenRouterMessageResponse(
+    val role: String? = null,
+    val content: String? = null,
+    val reasoning: String? = null,
+    @SerialName("reasoning_content") val reasoningContent: String? = null
 )
 
 @Serializable
@@ -88,14 +97,69 @@ class OpenRouterProvider(
             )
         }
 
-        FlintLogger.i(tag, "Calling OpenRouter Streaming API | Model: $effectiveModel | Endpoint: https://openrouter.ai/api/v1/chat/completions")
+        FlintLogger.i(tag, "Calling OpenRouter API | Model: $effectiveModel | Endpoint: https://openrouter.ai/api/v1/chat/completions")
 
         return try {
             val requestBody = OpenRouterRequest(
                 model = effectiveModel,
-                messages = listOf(
-                    OpenRouterMessage(role = "user", content = request.prompt)
-                ),
+                messages = listOf(OpenRouterMessageRequest(role = "user", content = request.prompt)),
+                stream = false
+            )
+
+            val httpResponse = httpClient.post("https://openrouter.ai/api/v1/chat/completions") {
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $activeApiKey")
+                header("HTTP-Referer", "https://github.com/shubhamthorat/flint")
+                header("X-Title", "Flint AI")
+                setBody(requestBody)
+            }
+
+            val responseText = httpResponse.bodyAsText()
+
+            if (!httpResponse.status.isSuccess()) {
+                FlintLogger.e(tag, "OpenRouter API HTTP Error ${httpResponse.status.value}: $responseText")
+                val errorMessage = parseErrorMessage(responseText) ?: "HTTP ${httpResponse.status.value}: ${httpResponse.status.description} | Payload: $responseText"
+                return FlintResult.Error(AppError.AiProvider("OpenRouter API Error: $errorMessage"))
+            }
+
+            val response = jsonParser.decodeFromString<OpenRouterResponse>(responseText)
+
+            if (response.error != null) {
+                val errMessage = response.error.message ?: "Unknown OpenRouter API error"
+                FlintLogger.e(tag, "OpenRouter API returned error payload: $errMessage")
+                return FlintResult.Error(AppError.AiProvider("OpenRouter API Error: $errMessage"))
+            }
+
+            val choice = response.choices?.firstOrNull()
+            val generatedContent = extractTextFromChoice(choice)
+
+            if (generatedContent.isNullOrBlank()) {
+                FlintLogger.w(tag, "Non-stream response empty. Retrying with stream mode...")
+                return generateFromStream(request, effectiveModel)
+            }
+
+            val tokensUsed = response.usage?.totalTokens ?: (request.prompt.length * 2)
+            FlintLogger.i(tag, "OpenRouter Non-Stream Success! Tokens used: $tokensUsed")
+
+            FlintResult.Success(
+                AiResponse(
+                    content = generatedContent,
+                    providerUsed = "OpenRouter REST API ($effectiveModel)",
+                    tokensUsed = tokensUsed
+                )
+            )
+        } catch (e: Exception) {
+            FlintLogger.e(tag, "Exception calling OpenRouter API: ${e.message}. Retrying with stream mode...")
+            generateFromStream(request, effectiveModel)
+        }
+    }
+
+    private suspend fun generateFromStream(request: AiRequest, effectiveModel: String): FlintResult<AiResponse, AppError> {
+        val tag = "OpenRouterProvider[StreamAcc]"
+        return try {
+            val requestBody = OpenRouterRequest(
+                model = effectiveModel,
+                messages = listOf(OpenRouterMessageRequest(role = "user", content = request.prompt)),
                 stream = true
             )
 
@@ -113,7 +177,6 @@ class OpenRouterProvider(
             statement.execute { httpResponse ->
                 if (!httpResponse.status.isSuccess()) {
                     val responseText = httpResponse.bodyAsText()
-                    FlintLogger.e(tag, "OpenRouter API HTTP Error ${httpResponse.status.value}: $responseText")
                     lastErrorMsg = parseErrorMessage(responseText) ?: "HTTP ${httpResponse.status.value}: ${httpResponse.status.description} | $responseText"
                     return@execute
                 }
@@ -123,8 +186,9 @@ class OpenRouterProvider(
 
                 while (!channel.isClosedForRead) {
                     val line = channel.readUTF8Line() ?: break
-                    if (line.startsWith("data: ")) {
-                        val data = line.removePrefix("data: ").trim()
+                    val trimmed = line.trim()
+                    if (trimmed.startsWith("data:")) {
+                        val data = trimmed.removePrefix("data:").trim()
                         if (data == "[DONE]") break
                         if (data.isBlank()) continue
 
@@ -135,7 +199,7 @@ class OpenRouterProvider(
                                 break
                             }
                             val choice = response.choices?.firstOrNull()
-                            val chunkText = choice?.delta?.content ?: choice?.message?.content
+                            val chunkText = extractTextFromChoice(choice)
                             if (!chunkText.isNullOrEmpty()) {
                                 sb.append(chunkText)
                             }
@@ -152,11 +216,10 @@ class OpenRouterProvider(
             }
 
             if (accumulatedText.isBlank()) {
-                FlintLogger.e(tag, "OpenRouter API returned empty response from stream")
+                FlintLogger.e(tag, "OpenRouter API stream returned blank text")
                 return FlintResult.Error(AppError.AiProvider("OpenRouter API returned an empty response."))
             }
 
-            FlintLogger.i(tag, "OpenRouter Stream Success! Received ${accumulatedText.length} chars")
             FlintResult.Success(
                 AiResponse(
                     content = accumulatedText,
@@ -165,7 +228,7 @@ class OpenRouterProvider(
                 )
             )
         } catch (e: Exception) {
-            FlintLogger.e(tag, "Exception calling OpenRouter API: ${e.message}")
+            FlintLogger.e(tag, "Exception in generateFromStream: ${e.message}")
             FlintResult.Error(
                 AppError.AiProvider("OpenRouter connection failed: ${e.message ?: "Unknown error"}")
             )
@@ -184,9 +247,7 @@ class OpenRouterProvider(
         try {
             val requestBody = OpenRouterRequest(
                 model = effectiveModel,
-                messages = listOf(
-                    OpenRouterMessage(role = "user", content = request.prompt)
-                ),
+                messages = listOf(OpenRouterMessageRequest(role = "user", content = request.prompt)),
                 stream = true
             )
 
@@ -204,6 +265,7 @@ class OpenRouterProvider(
                 if (!httpResponse.status.isSuccess()) {
                     val responseText = httpResponse.bodyAsText()
                     val errorMessage = parseErrorMessage(responseText) ?: "HTTP ${httpResponse.status.value}: ${httpResponse.status.description}"
+                    FlintLogger.e(tag, "Stream Error $errorMessage")
                     return@execute
                 }
 
@@ -212,15 +274,16 @@ class OpenRouterProvider(
 
                 while (!channel.isClosedForRead) {
                     val line = channel.readUTF8Line() ?: break
-                    if (line.startsWith("data: ")) {
-                        val data = line.removePrefix("data: ").trim()
+                    val trimmed = line.trim()
+                    if (trimmed.startsWith("data:")) {
+                        val data = trimmed.removePrefix("data:").trim()
                         if (data == "[DONE]") break
                         if (data.isBlank()) continue
 
                         try {
                             val response = jsonParser.decodeFromString<OpenRouterResponse>(data)
                             val choice = response.choices?.firstOrNull()
-                            val chunkText = choice?.delta?.content ?: choice?.message?.content
+                            val chunkText = extractTextFromChoice(choice)
                             if (!chunkText.isNullOrEmpty()) {
                                 sb.append(chunkText)
                                 emit(FlintResult.Success(sb.toString()))
@@ -255,10 +318,24 @@ class OpenRouterProvider(
         }
     }
 
+    private fun extractTextFromChoice(choice: OpenRouterChoice?): String? {
+        if (choice == null) return null
+        val delta = choice.delta
+        val msg = choice.message
+
+        return delta?.content?.takeIf { it.isNotEmpty() }
+            ?: delta?.reasoningContent?.takeIf { it.isNotEmpty() }
+            ?: delta?.reasoning?.takeIf { it.isNotEmpty() }
+            ?: msg?.content?.takeIf { it.isNotEmpty() }
+            ?: msg?.reasoningContent?.takeIf { it.isNotEmpty() }
+            ?: msg?.reasoning?.takeIf { it.isNotEmpty() }
+    }
+
     companion object {
         private val jsonParser = Json {
             ignoreUnknownKeys = true
             isLenient = true
+            encodeDefaults = true
         }
 
         private fun createDefaultHttpClient(): HttpClient {
