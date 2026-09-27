@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.shubhamthorat.flint.domain.monetization.FreePlanLimits
 import com.shubhamthorat.flint.domain.monetization.QuotaCalculator
@@ -154,7 +155,7 @@ fun DashboardScreen(
             }
         }
 
-        // Recent Sparks & Campaigns
+        // Recent Sparks & Campaigns Section
         Text(
             text = "Recent Sparks & Campaigns",
             style = FlintTheme.typography.headlineMedium,
@@ -169,18 +170,20 @@ fun DashboardScreen(
                 Column(
                     modifier = Modifier.padding(FlintTheme.spacing.large),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
                 ) {
                     Text(
                         text = "Every story starts somewhere.",
                         style = FlintTheme.typography.titleLarge,
                         color = FlintTheme.colors.primary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "Your dashboard is ready. Click '✨ New Spark' to generate your first multi-channel campaign.",
+                        text = "Your dashboard is ready. Click 'New Spark' to generate your first multi-channel campaign.",
                         style = FlintTheme.typography.bodyMedium,
-                        color = FlintTheme.colors.textSecondary
+                        color = FlintTheme.colors.textSecondary,
+                        textAlign = TextAlign.Center
                     )
                     FlintButton(
                         onClick = { navigationManager.navigateTo(FlintScreen.Create) },
@@ -197,7 +200,7 @@ fun DashboardScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(FlintTheme.spacing.medium),
-                        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+                        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -219,7 +222,7 @@ fun DashboardScreen(
                             )
                         }
                         Text(
-                            text = "Source Idea: \"${campaign.ideaOrSource}\"",
+                            text = "Source Spark: \"${campaign.ideaOrSource}\"",
                             style = FlintTheme.typography.bodyMedium,
                             color = FlintTheme.colors.textSecondary,
                             maxLines = 2,

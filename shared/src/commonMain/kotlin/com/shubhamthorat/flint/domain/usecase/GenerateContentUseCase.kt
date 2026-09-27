@@ -1,5 +1,6 @@
 package com.shubhamthorat.flint.domain.usecase
 
+import com.shubhamthorat.flint.core.FlintLogger
 import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.CreatorDNA
 import com.shubhamthorat.flint.domain.model.FlintResult
@@ -18,11 +19,14 @@ class GenerateContentUseCase(
         targetType: ContentType,
         creatorDna: CreatorDNA = CreatorDNA()
     ): FlintResult<ContentAsset, AppError> {
+        val tag = "GenerateContentUseCase"
+        FlintLogger.i(tag, "Executing content generation for targetType: ${targetType.name} | Tone: ${creatorDna.preferredTone}")
+
         val prompt = buildPrompt(sourceText, targetType, creatorDna)
         val aiRequest = AiRequest(prompt = prompt)
 
         return aiRepository.generateContent(aiRequest).map { response ->
-            ContentAsset(
+            val asset = ContentAsset(
                 id = "asset_${targetType.name.lowercase()}",
                 sourceId = null,
                 title = "Generated ${targetType.name.replace('_', ' ')}",
@@ -31,6 +35,8 @@ class GenerateContentUseCase(
                 status = ContentStatus.DRAFT,
                 platform = getPlatformForType(targetType)
             )
+            FlintLogger.i(tag, "Content asset successfully generated: ${asset.title} for platform ${asset.platform}")
+            asset
         }
     }
 

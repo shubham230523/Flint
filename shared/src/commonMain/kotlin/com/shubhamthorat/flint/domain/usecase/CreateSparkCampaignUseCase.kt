@@ -1,5 +1,6 @@
 package com.shubhamthorat.flint.domain.usecase
 
+import com.shubhamthorat.flint.core.FlintLogger
 import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.Campaign
 import com.shubhamthorat.flint.domain.model.CreatorDNA
@@ -15,7 +16,11 @@ class CreateSparkCampaignUseCase(
         targetTypes: List<ContentType>,
         creatorDna: CreatorDNA = CreatorDNA()
     ): FlintResult<Campaign, AppError> {
+        val tag = "CreateSparkCampaignUseCase"
+        FlintLogger.i(tag, "Executing campaign creation for source: \"$ideaOrSource\" across ${targetTypes.size} channels: ${targetTypes.map { it.name }}")
+
         if (targetTypes.isEmpty()) {
+            FlintLogger.e(tag, "Validation failed: Campaign requires at least one target content type")
             return FlintResult.Error(
                 AppError.Validation("Campaign requires at least one target content type")
             )
@@ -24,9 +29,13 @@ class CreateSparkCampaignUseCase(
         val items = mutableListOf<ContentAsset>()
 
         for (type in targetTypes) {
+            FlintLogger.d(tag, "Generating asset for channel: ${type.name}")
             when (val result = generateContentUseCase.execute(ideaOrSource, type, creatorDna)) {
                 is FlintResult.Success -> items.add(result.data)
-                is FlintResult.Error -> return result
+                is FlintResult.Error -> {
+                    FlintLogger.e(tag, "Failed to generate asset for type ${type.name}: ${result.error.message}")
+                    return result
+                }
             }
         }
 
@@ -37,6 +46,7 @@ class CreateSparkCampaignUseCase(
             items = items
         )
 
+        FlintLogger.i(tag, "Campaign successfully assembled with ${campaign.items.size} channel assets | ID: ${campaign.id}")
         return FlintResult.Success(campaign)
     }
 }
