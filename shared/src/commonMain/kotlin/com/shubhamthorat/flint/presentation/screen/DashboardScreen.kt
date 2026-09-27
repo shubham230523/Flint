@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.shubhamthorat.flint.domain.monetization.FreePlanLimits
 import com.shubhamthorat.flint.domain.monetization.QuotaCalculator
 import com.shubhamthorat.flint.domain.monetization.UserUsage
@@ -70,7 +71,9 @@ fun DashboardScreen(
                     text = "What's your next spark?",
                     style = FlintTheme.typography.displayMedium,
                     color = FlintTheme.colors.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "Transform raw ideas, documents, audio, or videos into high-impact multi-channel campaigns.",
@@ -115,7 +118,10 @@ fun DashboardScreen(
                     Text(
                         text = "Monthly AI Quota",
                         style = FlintTheme.typography.titleMedium,
-                        color = FlintTheme.colors.onSurface
+                        color = FlintTheme.colors.onSurface,
+                        modifier = Modifier.weight(1f, fill = false),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     FlintChip(
                         selected = false,
@@ -195,12 +201,16 @@ fun DashboardScreen(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = campaign.title,
                                 style = FlintTheme.typography.titleLarge,
-                                color = FlintTheme.colors.onSurface
+                                color = FlintTheme.colors.onSurface,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             FlintChip(
                                 selected = true,
@@ -211,7 +221,9 @@ fun DashboardScreen(
                         Text(
                             text = "Source Idea: \"${campaign.ideaOrSource}\"",
                             style = FlintTheme.typography.bodyMedium,
-                            color = FlintTheme.colors.textSecondary
+                            color = FlintTheme.colors.textSecondary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

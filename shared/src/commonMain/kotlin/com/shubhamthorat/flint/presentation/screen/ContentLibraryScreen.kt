@@ -1,5 +1,6 @@
 package com.shubhamthorat.flint.presentation.screen
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentStatus
@@ -80,8 +82,11 @@ fun ContentLibraryScreen(
 
         // Category Filter Chips
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             val filters = listOf("All", "Drafts", "Published", "LinkedIn", "X Thread", "Newsletter")
             filters.forEach { filter ->
@@ -134,12 +139,16 @@ fun ContentLibraryScreen(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = asset.title,
                                 style = FlintTheme.typography.titleLarge,
-                                color = FlintTheme.colors.onSurface
+                                color = FlintTheme.colors.onSurface,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             FlintChip(
                                 selected = asset.status == ContentStatus.PUBLISHED,
@@ -152,12 +161,14 @@ fun ContentLibraryScreen(
                             text = asset.body,
                             style = FlintTheme.typography.bodyMedium,
                             color = FlintTheme.colors.textSecondary,
-                            maxLines = 2
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             FlintChip(
                                 selected = false,

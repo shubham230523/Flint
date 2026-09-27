@@ -85,10 +85,9 @@ fun App() {
                     )
                 }
 
-                // Main App Navigation Scaffold & Screen Renderer
+                // Responsive Adaptive Navigation Scaffold (Desktop / Tablet / Mobile / Web)
                 FlintAppScaffold(
-                    navigationManager = navigationManager,
-                    isWideScreen = false
+                    navigationManager = navigationManager
                 ) { activeScreen ->
                     when (activeScreen) {
                         FlintScreen.Onboarding -> OnboardingScreen(navigationManager = navigationManager)

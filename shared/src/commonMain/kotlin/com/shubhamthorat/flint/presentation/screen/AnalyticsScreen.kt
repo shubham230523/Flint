@@ -1,5 +1,6 @@
 package com.shubhamthorat.flint.presentation.screen
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentStatus
 import com.shubhamthorat.flint.presentation.component.FlintButton
@@ -54,8 +56,11 @@ fun AnalyticsScreen(
 
         // Time Range Chips
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             listOf("7 Days", "30 Days", "90 Days", "All Time").forEach { range ->
                 FlintChip(
@@ -106,7 +111,14 @@ fun AnalyticsScreen(
                         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
                     ) {
                         Text(text = "Total Assets Generated", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.textSecondary)
-                        Text(text = "${assets.size}", style = FlintTheme.typography.displayMedium, color = FlintTheme.colors.primary, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "${assets.size}",
+                            style = FlintTheme.typography.displayMedium,
+                            color = FlintTheme.colors.primary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         Text(text = "Active in library", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.primary)
                     }
                 }
@@ -117,7 +129,14 @@ fun AnalyticsScreen(
                         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
                     ) {
                         Text(text = "Published Posts", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.textSecondary)
-                        Text(text = "${publishedAssets.size}", style = FlintTheme.typography.displayMedium, color = FlintTheme.colors.secondary, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "${publishedAssets.size}",
+                            style = FlintTheme.typography.displayMedium,
+                            color = FlintTheme.colors.secondary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         Text(text = "Live across channels", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.secondary)
                     }
                 }

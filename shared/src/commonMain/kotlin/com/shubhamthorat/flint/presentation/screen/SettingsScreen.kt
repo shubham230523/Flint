@@ -1,5 +1,6 @@
 package com.shubhamthorat.flint.presentation.screen
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -144,7 +145,9 @@ fun SettingsScreen(
                 )
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
                     val providers = listOf("OpenRouter", "Gemini", "Ollama Cloud")
@@ -201,7 +204,12 @@ fun SettingsScreen(
                                 style = FlintTheme.typography.labelSmall,
                                 color = FlintTheme.colors.textSecondary
                             )
-                            Row(horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+                            ) {
                                 val popularModels = listOf(
                                     "anthropic/claude-3.5-sonnet",
                                     "meta-llama/llama-3.1-70b-instruct",

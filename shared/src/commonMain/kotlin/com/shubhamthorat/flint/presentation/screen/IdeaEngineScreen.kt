@@ -134,11 +134,16 @@ fun IdeaEngineScreen(
                         modifier = Modifier.padding(FlintTheme.spacing.medium),
                         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                     ) {
-                        Text(text = source.contentOrUrl, style = FlintTheme.typography.bodyLarge, color = FlintTheme.colors.onSurface)
+                        Text(
+                            text = source.contentOrUrl,
+                            style = FlintTheme.typography.bodyLarge,
+                            color = FlintTheme.colors.onSurface
+                        )
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             FlintChip(selected = false, onClick = {}, label = source.type.name)
 

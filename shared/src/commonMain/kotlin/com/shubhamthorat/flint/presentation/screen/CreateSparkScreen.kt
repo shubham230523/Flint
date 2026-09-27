@@ -1,5 +1,6 @@
 package com.shubhamthorat.flint.presentation.screen
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -114,7 +115,9 @@ fun CreateSparkScreen(
                 )
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
                     val channels = listOf(
@@ -152,7 +155,9 @@ fun CreateSparkScreen(
                 )
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
                     val tones = listOf("Conversational", "Punchy", "Authoritative", "Storytelling")
@@ -213,7 +218,9 @@ fun CreateSparkScreen(
 
             // Asset Tabs
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
             ) {
                 campaign.items.forEachIndexed { index, asset ->

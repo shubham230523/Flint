@@ -6,6 +6,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
 
 @Composable
@@ -19,7 +20,14 @@ fun FlintChip(
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(text = label, style = FlintTheme.typography.labelLarge) },
+        label = {
+            Text(
+                text = label,
+                style = FlintTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
         modifier = modifier,
         leadingIcon = leadingIcon,
         shape = RoundedCornerShape(FlintTheme.radius.round),

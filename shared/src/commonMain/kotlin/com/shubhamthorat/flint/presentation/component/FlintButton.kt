@@ -12,6 +12,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
 
@@ -44,7 +45,12 @@ fun FlintButton(
                 contentPadding = PaddingValues(horizontal = FlintTheme.spacing.medium)
             ) {
                 if (text != null) {
-                    Text(text = text, style = FlintTheme.typography.labelLarge)
+                    Text(
+                        text = text,
+                        style = FlintTheme.typography.labelLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 } else {
                     content?.invoke(this)
                 }
@@ -63,7 +69,12 @@ fun FlintButton(
                 contentPadding = PaddingValues(horizontal = FlintTheme.spacing.medium)
             ) {
                 if (text != null) {
-                    Text(text = text, style = FlintTheme.typography.labelLarge)
+                    Text(
+                        text = text,
+                        style = FlintTheme.typography.labelLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 } else {
                     content?.invoke(this)
                 }
@@ -81,7 +92,9 @@ fun FlintButton(
                     Text(
                         text = text,
                         style = FlintTheme.typography.labelLarge,
-                        color = FlintTheme.colors.primary
+                        color = FlintTheme.colors.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 } else {
                     content?.invoke(this)
@@ -100,7 +113,9 @@ fun FlintButton(
                     Text(
                         text = text,
                         style = FlintTheme.typography.labelLarge,
-                        color = FlintTheme.colors.primary
+                        color = FlintTheme.colors.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 } else {
                     content?.invoke(this)

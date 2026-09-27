@@ -1,5 +1,6 @@
 package com.shubhamthorat.flint.presentation.screen
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.shubhamthorat.flint.domain.model.Campaign
 import com.shubhamthorat.flint.domain.repository.CampaignRepository
 import com.shubhamthorat.flint.presentation.component.FlintButton
@@ -97,12 +99,16 @@ fun CampaignsScreen(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = campaign.title,
                                 style = FlintTheme.typography.titleLarge,
-                                color = FlintTheme.colors.onSurface
+                                color = FlintTheme.colors.onSurface,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             FlintChip(
                                 selected = true,
@@ -114,12 +120,17 @@ fun CampaignsScreen(
                         Text(
                             text = "Source Spark: \"${campaign.ideaOrSource}\"",
                             style = FlintTheme.typography.bodyMedium,
-                            color = FlintTheme.colors.textSecondary
+                            color = FlintTheme.colors.textSecondary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             campaign.items.forEach { item ->
                                 FlintChip(
@@ -146,7 +157,9 @@ fun CampaignsScreen(
                     Text(
                         text = "Campaign Breakdown: ${campaign.title}",
                         style = FlintTheme.typography.titleLarge,
-                        color = FlintTheme.colors.primary
+                        color = FlintTheme.colors.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     campaign.items.forEach { asset ->
@@ -155,8 +168,17 @@ fun CampaignsScreen(
                                 modifier = Modifier.padding(FlintTheme.spacing.small),
                                 verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
                             ) {
-                                Text(text = "${asset.platform} — ${asset.title}", style = FlintTheme.typography.titleMedium)
-                                Text(text = asset.body, style = FlintTheme.typography.bodyMedium, color = FlintTheme.colors.textSecondary)
+                                Text(
+                                    text = "${asset.platform} — ${asset.title}",
+                                    style = FlintTheme.typography.titleMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = asset.body,
+                                    style = FlintTheme.typography.bodyMedium,
+                                    color = FlintTheme.colors.textSecondary
+                                )
                             }
                         }
                     }
