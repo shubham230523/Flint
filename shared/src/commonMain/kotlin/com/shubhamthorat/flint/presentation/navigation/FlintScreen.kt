@@ -22,17 +22,18 @@ sealed class FlintScreen(
     object Membership : FlintScreen("membership", "Membership")
 
     companion object {
-        val topLevelScreens = listOf(
-            Dashboard,
-            Create,
-            Projects,
-            ContentLibrary,
-            Campaigns,
-            Calendar,
-            Analytics,
-            CreatorDNA,
-            Settings,
-            Membership
-        )
+        val topLevelScreens: List<FlintScreen>
+            get() = listOf(
+                Dashboard,
+                Create,
+                Projects,
+                ContentLibrary,
+                Campaigns,
+                Calendar,
+                Analytics,
+                CreatorDNA,
+                Settings,
+                Membership
+            )
     }
 }
