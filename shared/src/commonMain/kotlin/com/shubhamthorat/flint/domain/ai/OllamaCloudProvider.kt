@@ -14,18 +14,22 @@ class OllamaCloudProvider(
     override val providerName: String = "OllamaCloud"
 
     override suspend fun generate(request: AiRequest): FlintResult<AiResponse, AppError> {
-        return FlintResult.Success(
-            AiResponse(
-                content = "OllamaCloud response for prompt: ${request.prompt}",
-                providerUsed = providerName,
-                tokensUsed = request.prompt.length * 2
+        if (endpointUrl.isNullOrBlank()) {
+            return FlintResult.Error(
+                AppError.AiProvider("OllamaCloud endpoint URL is not configured.")
             )
+        }
+
+        return FlintResult.Error(
+            AppError.AiProvider("OllamaCloud provider endpoint is not available.")
         )
     }
 
     override fun generateStream(request: AiRequest): Flow<FlintResult<String, AppError>> = flow {
-        emit(FlintResult.Success("OllamaCloud streamed response for: ${request.prompt}"))
+        emit(FlintResult.Error(AppError.AiProvider("OllamaCloud provider is not configured.")))
     }
 
-    override suspend fun isHealthy(): Boolean = true
+    override suspend fun isHealthy(): Boolean {
+        return !endpointUrl.isNullOrBlank()
+    }
 }

@@ -20,10 +20,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shubhamthorat.flint.domain.ai.AiTaskRouter
-import com.shubhamthorat.flint.domain.ai.FakeAiProvider
+import com.shubhamthorat.flint.domain.ai.GeminiProvider
+import com.shubhamthorat.flint.domain.ai.OllamaCloudProvider
+import com.shubhamthorat.flint.domain.ai.OpenRouterProvider
 import com.shubhamthorat.flint.domain.model.Campaign
 import com.shubhamthorat.flint.domain.model.CreatorDNA
 import com.shubhamthorat.flint.domain.model.FlintResult
@@ -54,7 +58,11 @@ fun CreateSparkScreen(
     var selectedTone by remember { mutableStateOf("Conversational") }
     var isGenerating by remember { mutableStateOf(false) }
     var generatedCampaign by remember { mutableStateOf<Campaign?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedAssetIndex by remember { mutableStateOf(0) }
+    var isCopiedFeedbackVisible by remember { mutableStateOf(false) }
+
+    val clipboardManager = LocalClipboardManager.current
 
     val selectedTypes = remember {
         mutableStateListOf(ContentType.LINKEDIN_POST, ContentType.X_THREAD, ContentType.NEWSLETTER)
@@ -62,7 +70,7 @@ fun CreateSparkScreen(
 
     val coroutineScope = rememberCoroutineScope()
     val campaignUseCase = remember {
-        val router = AiTaskRouter(listOf(FakeAiProvider("Gemini")))
+        val router = AiTaskRouter(listOf(OpenRouterProvider(), GeminiProvider(), OllamaCloudProvider()))
         CreateSparkCampaignUseCase(GenerateContentUseCase(router))
     }
 
@@ -71,7 +79,7 @@ fun CreateSparkScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(FlintTheme.spacing.medium),
-        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
+        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.large)
     ) {
         Text(
             text = "Create Spark Workspace",
@@ -180,15 +188,21 @@ fun CreateSparkScreen(
             onClick = {
                 if (sourceText.isNotBlank() && selectedTypes.isNotEmpty()) {
                     isGenerating = true
+                    errorMessage = null
+                    generatedCampaign = null
                     coroutineScope.launch {
                         val dna = CreatorDNA(preferredTone = selectedTone)
-                        val result = campaignUseCase.execute(sourceText, selectedTypes.toList(), dna)
-                        if (result is FlintResult.Success) {
-                            val campaign = result.data
-                            generatedCampaign = campaign
-                            campaignRepository.saveCampaign(campaign)
-                            campaign.items.forEach { asset ->
-                                contentRepository.saveContent(asset)
+                        when (val result = campaignUseCase.execute(sourceText, selectedTypes.toList(), dna)) {
+                            is FlintResult.Success -> {
+                                val campaign = result.data
+                                generatedCampaign = campaign
+                                campaignRepository.saveCampaign(campaign)
+                                campaign.items.forEach { asset ->
+                                    contentRepository.saveContent(asset)
+                                }
+                            }
+                            is FlintResult.Error -> {
+                                errorMessage = result.error.message
                             }
                         }
                         isGenerating = false
@@ -207,6 +221,30 @@ fun CreateSparkScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 FlintCircularProgressIndicator()
+            }
+        }
+
+        errorMessage?.let { errorText ->
+            FlintCard(
+                modifier = Modifier.fillMaxWidth(),
+                outlined = true
+            ) {
+                Column(
+                    modifier = Modifier.padding(FlintTheme.spacing.medium),
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                ) {
+                    Text(
+                        text = "Generation Error",
+                        style = FlintTheme.typography.titleMedium,
+                        color = com.shubhamthorat.flint.presentation.theme.FlintColorTokens.Error,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = errorText,
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.onSurface
+                    )
+                }
             }
         }
 
@@ -229,7 +267,10 @@ fun CreateSparkScreen(
                 campaign.items.forEachIndexed { index, asset ->
                     FlintChip(
                         selected = selectedAssetIndex == index,
-                        onClick = { selectedAssetIndex = index },
+                        onClick = {
+                            selectedAssetIndex = index
+                            isCopiedFeedbackVisible = false
+                        },
                         label = asset.platform
                     )
                 }
@@ -256,10 +297,20 @@ fun CreateSparkScreen(
                             style = FlintTheme.typography.bodyLarge,
                             color = FlintTheme.colors.onSurface
                         )
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                            FlintButton(
+                                onClick = {
+                                    clipboardManager.setText(AnnotatedString(currentAsset.body))
+                                    isCopiedFeedbackVisible = true
+                                },
+                                text = if (isCopiedFeedbackVisible) "✓ Copied!" else "📋 Copy Content",
+                                variant = FlintButtonVariant.OUTLINED
+                            )
+
                             FlintButton(
                                 onClick = { navigationManager.navigateTo(FlintScreen.ContentLibrary) },
                                 text = "View in Library",

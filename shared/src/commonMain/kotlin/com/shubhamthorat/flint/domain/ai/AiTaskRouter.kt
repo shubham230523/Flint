@@ -25,16 +25,22 @@ class AiTaskRouter(
             )
         }
 
-        val preferred = request.providerPreference ?: "OpenRouter"
-        val sortedProviders = providers.sortedByDescending { it.providerName.contains(preferred, ignoreCase = true) }
+        val preferred = request.providerPreference
+        val matchingProviders = if (!preferred.isNullOrBlank()) {
+            providers.filter { it.providerName.contains(preferred, ignoreCase = true) }
+        } else emptyList()
 
-        FlintLogger.d(tag, "Provider search order: ${sortedProviders.map { it.providerName }}")
+        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders else providers
+
+        FlintLogger.d(tag, "Target providers: ${targetProviders.map { it.providerName }}")
 
         var lastError: AppError? = null
 
-        for (provider in sortedProviders) {
+        for (provider in targetProviders) {
             if (!provider.isHealthy()) {
+                val unhealthyErr = AppError.AiProvider("${provider.providerName} is not configured or failed health check.")
                 FlintLogger.w(tag, "Provider ${provider.providerName} failed health check. Skipping.")
+                lastError = unhealthyErr
                 continue
             }
 
@@ -45,16 +51,15 @@ class AiTaskRouter(
                     return result
                 }
                 is FlintResult.Error -> {
-                    FlintLogger.w(tag, "Provider ${provider.providerName} failed with error: ${result.error.message}. Attempting failover...")
+                    FlintLogger.w(tag, "Provider ${provider.providerName} failed with error: ${result.error.message}.")
                     lastError = result.error
                 }
             }
         }
 
-        FlintLogger.e(tag, "All AI providers failed. Returning last error: ${lastError?.message}")
-        return FlintResult.Error(
-            lastError ?: AppError.AiProvider("All configured AI providers failed")
-        )
+        val finalError = lastError ?: AppError.AiProvider("Configured AI provider failed")
+        FlintLogger.e(tag, "AI generation failed. Returning error: ${finalError.message}")
+        return FlintResult.Error(finalError)
     }
 
     override fun generateContentStream(request: AiRequest): Flow<FlintResult<String, AppError>> = flow {
@@ -67,10 +72,14 @@ class AiTaskRouter(
             return@flow
         }
 
-        val preferred = request.providerPreference ?: "OpenRouter"
-        val sortedProviders = providers.sortedByDescending { it.providerName.contains(preferred, ignoreCase = true) }
+        val preferred = request.providerPreference
+        val matchingProviders = if (!preferred.isNullOrBlank()) {
+            providers.filter { it.providerName.contains(preferred, ignoreCase = true) }
+        } else emptyList()
 
-        for (provider in sortedProviders) {
+        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders else providers
+
+        for (provider in targetProviders) {
             if (!provider.isHealthy()) {
                 FlintLogger.w(tag, "Provider ${provider.providerName} is unhealthy. Skipping for stream.")
                 continue
@@ -80,7 +89,7 @@ class AiTaskRouter(
             return@flow
         }
 
-        FlintLogger.e(tag, "All configured streaming AI providers failed")
-        emit(FlintResult.Error(AppError.AiProvider("All configured streaming AI providers failed")))
+        FlintLogger.e(tag, "All target streaming AI providers failed")
+        emit(FlintResult.Error(AppError.AiProvider("Configured streaming AI provider failed")))
     }
 }

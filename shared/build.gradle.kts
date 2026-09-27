@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 val isDesktopOnly = providers.gradleProperty("flint.desktopOnly").orNull?.toBoolean() ?: false
@@ -131,6 +132,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            implementation("io.ktor:ktor-client-cio:3.1.1")
+        }
+        jvmMain.dependencies {
+            implementation("io.ktor:ktor-client-cio:3.1.1")
         }
         commonMain {
             kotlin.srcDir(generateFlintBuildConfig)
@@ -144,6 +149,10 @@ kotlin {
                 implementation(libs.compose.uiToolingPreview)
                 implementation(libs.androidx.lifecycle.viewmodelCompose)
                 implementation(libs.androidx.lifecycle.runtimeCompose)
+                implementation("io.ktor:ktor-client-core:3.1.1")
+                implementation("io.ktor:ktor-client-content-negotiation:3.1.1")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
             }
         }
         commonTest.dependencies {
