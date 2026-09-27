@@ -20,11 +20,15 @@ import com.shubhamthorat.flint.presentation.component.FlintChip
 import com.shubhamthorat.flint.presentation.navigation.FlintAppScaffold
 import com.shubhamthorat.flint.presentation.navigation.FlintScreen
 import com.shubhamthorat.flint.presentation.navigation.NavigationManager
+import com.shubhamthorat.flint.presentation.screen.AnalyticsScreen
+import com.shubhamthorat.flint.presentation.screen.CalendarScreen
 import com.shubhamthorat.flint.presentation.screen.CampaignsScreen
 import com.shubhamthorat.flint.presentation.screen.ContentLibraryScreen
 import com.shubhamthorat.flint.presentation.screen.CreateSparkScreen
 import com.shubhamthorat.flint.presentation.screen.CreatorDnaScreen
 import com.shubhamthorat.flint.presentation.screen.DashboardScreen
+import com.shubhamthorat.flint.presentation.screen.IdeaEngineScreen
+import com.shubhamthorat.flint.presentation.screen.OnboardingScreen
 import com.shubhamthorat.flint.presentation.screen.SettingsScreen
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
 
@@ -77,10 +81,14 @@ fun App() {
                     isWideScreen = false
                 ) { activeScreen ->
                     when (activeScreen) {
+                        FlintScreen.Onboarding -> OnboardingScreen(navigationManager = navigationManager)
                         FlintScreen.Dashboard -> DashboardScreen(navigationManager = navigationManager)
                         FlintScreen.Create -> CreateSparkScreen(navigationManager = navigationManager)
                         FlintScreen.ContentLibrary -> ContentLibraryScreen()
                         FlintScreen.Campaigns -> CampaignsScreen()
+                        FlintScreen.Calendar -> CalendarScreen(navigationManager = navigationManager)
+                        FlintScreen.Analytics -> AnalyticsScreen()
+                        FlintScreen.Projects -> IdeaEngineScreen(navigationManager = navigationManager)
                         FlintScreen.CreatorDNA -> CreatorDnaScreen()
                         FlintScreen.Settings, FlintScreen.Membership -> SettingsScreen(
                             navigationManager = navigationManager,

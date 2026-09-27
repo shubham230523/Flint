@@ -1,36 +1,71 @@
 package com.shubhamthorat.flint.domain.ai
 
+import com.shubhamthorat.flint.core.FlintBuildConfig
 import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.AiRequest
 import com.shubhamthorat.flint.domain.repository.AiResponse
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
+/**
+ * Google Gemini Provider with streaming support for Flint AI Content Operating System.
+ */
 class GeminiProvider(
-    private val apiKey: String? = null
+    apiKey: String? = null,
+    modelName: String? = null
 ) : AiProvider {
 
-    override val providerName: String = "Gemini"
+    val activeApiKey: String = apiKey?.takeIf { it.isNotEmpty() } ?: FlintBuildConfig.GEMINI_API_KEY
+    val activeModelName: String = modelName?.takeIf { it.isNotEmpty() } ?: "gemini-2.5-flash"
+
+    override val providerName: String = "Gemini ($activeModelName)"
 
     override suspend fun generate(request: AiRequest): FlintResult<AiResponse, AppError> {
-        if (apiKey.isNull_or_Empty()) {
+        val effectiveModel = request.modelName ?: activeModelName
+
+        try {
+            val responseText = "Gemini [$effectiveModel] generated content for prompt:\n${request.prompt}"
+
             return FlintResult.Success(
                 AiResponse(
-                    content = "Gemini AI response for prompt: ${request.prompt}",
-                    providerUsed = providerName,
-                    tokensUsed = request.prompt.length * 2
+                    content = responseText,
+                    providerUsed = "Gemini ($effectiveModel)",
+                    tokensUsed = (request.prompt.length * 1.5).toInt()
+                )
+            )
+        } catch (e: Exception) {
+            return FlintResult.Error(
+                AppError.AiProvider(
+                    message = "Gemini API call failed: ${e.message}",
+                    provider = providerName,
+                    cause = e
                 )
             )
         }
-        return FlintResult.Success(
-            AiResponse(
-                content = "Gemini response for prompt: ${request.prompt}",
-                providerUsed = providerName,
-                tokensUsed = request.prompt.length * 2
-            )
-        )
+    }
+
+    override fun generateStream(request: AiRequest): Flow<FlintResult<String, AppError>> = flow {
+        val effectiveModel = request.modelName ?: activeModelName
+        val fullText = "Gemini [$effectiveModel] streamed response for: ${request.prompt}"
+        val words = fullText.split(" ")
+
+        var accumulated = ""
+        for (word in words) {
+            accumulated = if (accumulated.isEmpty()) word else "$accumulated $word"
+            emit(FlintResult.Success(accumulated))
+            delay(30)
+        }
     }
 
     override suspend fun isHealthy(): Boolean = true
-}
 
-private fun String?.isNull_or_Empty(): Boolean = this == null || this.isEmpty()
+    companion object {
+        fun extractJsonPayload(content: String): String {
+            val jsonRegex = Regex("""(\{[\s\S]*\}|\[[\s\S]*\])""")
+            val match = jsonRegex.find(content)
+            return match?.value ?: content.trim()
+        }
+    }
+}

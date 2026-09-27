@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import com.shubhamthorat.flint.core.FlintBuildConfig
 import com.shubhamthorat.flint.domain.monetization.FreePlanLimits
 import com.shubhamthorat.flint.domain.monetization.MemberPlanLimits
 import com.shubhamthorat.flint.presentation.component.FlintButton
@@ -36,14 +37,13 @@ fun SettingsScreen(
 ) {
     var selectedProvider by remember { mutableStateOf("OpenRouter") }
 
-    // OpenRouter Settings
-    var openRouterApiKey by remember { mutableStateOf("") }
-    var openRouterModelName by remember { mutableStateOf("anthropic/claude-3.5-sonnet") }
+    // Pre-fill from git-ignored local.properties or GitHub Actions secrets
+    var openRouterApiKey by remember { mutableStateOf(FlintBuildConfig.OPENROUTER_API_KEY) }
+    var openRouterModelName by remember {
+        mutableStateOf(FlintBuildConfig.OPENROUTER_MODEL_NAME.ifEmpty { "anthropic/claude-3.5-sonnet" })
+    }
 
-    // Gemini Settings
-    var geminiApiKey by remember { mutableStateOf("") }
-
-    // Ollama Settings
+    var geminiApiKey by remember { mutableStateOf(FlintBuildConfig.GEMINI_API_KEY) }
     var ollamaEndpointUrl by remember { mutableStateOf("https://ollama.cloud.local") }
 
     var isConfigSavedFeedbackVisible by remember { mutableStateOf(false) }
@@ -56,11 +56,33 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
     ) {
         Text(
-            text = "Settings & AI Configuration",
+            text = "Settings & Environment Configuration",
             style = FlintTheme.typography.displayMedium,
             color = FlintTheme.colors.primary,
             fontWeight = FontWeight.Bold
         )
+
+        // Environment Secrets Info Card
+        FlintCard(
+            modifier = Modifier.fillMaxWidth(),
+            outlined = true
+        ) {
+            Column(
+                modifier = Modifier.padding(FlintTheme.spacing.medium),
+                verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+            ) {
+                Text(
+                    text = "🔐 Environment & Secret Protection",
+                    style = FlintTheme.typography.titleMedium,
+                    color = FlintTheme.colors.primary
+                )
+                Text(
+                    text = "Secrets are loaded from git-ignored local.properties or GitHub Actions repository secrets (OPENROUTER_API_KEY, OPENROUTER_MODEL_NAME). They are never tracked or committed to Git.",
+                    style = FlintTheme.typography.bodyMedium,
+                    color = FlintTheme.colors.textSecondary
+                )
+            }
+        }
 
         // Membership Plan Card
         FlintCard(
@@ -147,7 +169,7 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
             ) {
                 Text(
-                    text = "🔑 AI Provider API Keys & Model Name",
+                    text = "🔑 AI Provider Credentials & Model",
                     style = FlintTheme.typography.titleLarge,
                     color = FlintTheme.colors.primary
                 )
@@ -163,7 +185,7 @@ fun SettingsScreen(
                             FlintTextField(
                                 value = openRouterApiKey,
                                 onValueChange = { openRouterApiKey = it },
-                                label = "OpenRouter API Key",
+                                label = "OpenRouter API Key (Pre-filled from env / local.properties)",
                                 placeholder = "sk-or-v1-..."
                             )
 
@@ -229,15 +251,14 @@ fun SettingsScreen(
 
                 FlintButton(
                     onClick = { isConfigSavedFeedbackVisible = true },
-                    text = "Save Provider Configuration",
+                    text = "Save Configuration",
                     variant = FlintButtonVariant.PRIMARY,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 if (isConfigSavedFeedbackVisible) {
                     Text(
-                        text = "✓ AI Provider configuration successfully saved! Primary: $selectedProvider" +
-                                if (selectedProvider == "OpenRouter") " ($openRouterModelName)" else "",
+                        text = "✓ Configuration saved! Model: $openRouterModelName",
                         style = FlintTheme.typography.bodyMedium,
                         color = FlintTheme.colors.primary
                     )

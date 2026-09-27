@@ -4,6 +4,8 @@ import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.AiRequest
 import com.shubhamthorat.flint.domain.repository.AiResponse
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class FakeAiProvider(
     override val providerName: String,
@@ -27,6 +29,21 @@ class FakeAiProvider(
                 tokensUsed = request.prompt.length * 2
             )
         )
+    }
+
+    override fun generateStream(request: AiRequest): Flow<FlintResult<String, AppError>> = flow {
+        if (!shouldSucceed) {
+            emit(
+                FlintResult.Error(
+                    AppError.AiProvider(
+                        message = "Provider $providerName streaming failed",
+                        provider = providerName
+                    )
+                )
+            )
+        } else {
+            emit(FlintResult.Success("Generated response from $providerName for prompt: ${request.prompt}"))
+        }
     }
 
     override suspend fun isHealthy(): Boolean = shouldSucceed

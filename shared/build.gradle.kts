@@ -1,3 +1,11 @@
+import java.io.File
+import java.util.Properties
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -9,6 +17,68 @@ plugins {
 }
 
 val isDesktopOnly = providers.gradleProperty("flint.desktopOnly").orNull?.toBoolean() ?: false
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { stream ->
+        localProperties.load(stream)
+    }
+}
+
+fun getSecret(key: String, envKey: String, defaultValue: String = ""): String {
+    val envVal = System.getenv(envKey)
+    if (!envVal.isNullOrEmpty()) return envVal
+
+    val gradleProp = providers.gradleProperty(key).orNull
+    if (!gradleProp.isNullOrEmpty()) return gradleProp
+
+    val localProp = localProperties.getProperty(key)
+    if (!localProp.isNullOrEmpty()) return localProp
+
+    return defaultValue
+}
+
+abstract class GenerateFlintBuildConfigTask : DefaultTask() {
+    @get:Input
+    abstract val openRouterApiKey: Property<String>
+
+    @get:Input
+    abstract val openRouterModelName: Property<String>
+
+    @get:Input
+    abstract val geminiApiKey: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val dir = outputDir.get().asFile
+        dir.mkdirs()
+        val buildConfigFile = File(dir, "FlintBuildConfig.kt")
+        buildConfigFile.writeText("""
+            package com.shubhamthorat.flint.core
+
+            /**
+             * Auto-generated Flint Build Configuration.
+             * Values are loaded from environment variables (GitHub Actions secrets) or local.properties (git-ignored).
+             */
+            object FlintBuildConfig {
+                const val OPENROUTER_API_KEY: String = "${openRouterApiKey.get()}"
+                const val OPENROUTER_MODEL_NAME: String = "${openRouterModelName.get()}"
+                const val GEMINI_API_KEY: String = "${geminiApiKey.get()}"
+            }
+        """.trimIndent())
+    }
+}
+
+val generateFlintBuildConfig = tasks.register("generateFlintBuildConfig", GenerateFlintBuildConfigTask::class.java) {
+    openRouterApiKey.set(getSecret("openrouter.api.key", "OPENROUTER_API_KEY", ""))
+    openRouterModelName.set(getSecret("openrouter.model.name", "OPENROUTER_MODEL_NAME", "anthropic/claude-3.5-sonnet"))
+    geminiApiKey.set(getSecret("gemini.api.key", "GEMINI_API_KEY", ""))
+    outputDir.set(layout.buildDirectory.dir("generated/source/buildConfig/commonMain/kotlin/com/shubhamthorat/flint/core"))
+}
 
 kotlin {
     jvm()
@@ -62,16 +132,19 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
         }
-        commonMain.dependencies {
-            implementation(libs.kotlinx.coroutinesCore)
-            implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
-            implementation(libs.compose.ui)
-            implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
+        commonMain {
+            kotlin.srcDir(generateFlintBuildConfig)
+            dependencies {
+                implementation(libs.kotlinx.coroutinesCore)
+                implementation(libs.compose.runtime)
+                implementation(libs.compose.foundation)
+                implementation(libs.compose.material3)
+                implementation(libs.compose.ui)
+                implementation(libs.compose.components.resources)
+                implementation(libs.compose.uiToolingPreview)
+                implementation(libs.androidx.lifecycle.viewmodelCompose)
+                implementation(libs.androidx.lifecycle.runtimeCompose)
+            }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

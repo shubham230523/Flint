@@ -5,6 +5,9 @@ import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.AiRepository
 import com.shubhamthorat.flint.domain.repository.AiRequest
 import com.shubhamthorat.flint.domain.repository.AiResponse
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 
 class AiTaskRouter(
     private val providers: List<AiProvider>
@@ -17,12 +20,8 @@ class AiTaskRouter(
             )
         }
 
-        val preferred = request.providerPreference
-        val sortedProviders = if (preferred != null) {
-            providers.sortedByDescending { it.providerName.equals(preferred, ignoreCase = true) }
-        } else {
-            providers
-        }
+        val preferred = request.providerPreference ?: "OpenRouter"
+        val sortedProviders = providers.sortedByDescending { it.providerName.contains(preferred, ignoreCase = true) }
 
         var lastError: AppError? = null
 
@@ -38,5 +37,23 @@ class AiTaskRouter(
         return FlintResult.Error(
             lastError ?: AppError.AiProvider("All configured AI providers failed")
         )
+    }
+
+    override fun generateContentStream(request: AiRequest): Flow<FlintResult<String, AppError>> = flow {
+        if (providers.isEmpty()) {
+            emit(FlintResult.Error(AppError.AiProvider("No AI providers configured in AiTaskRouter")))
+            return@flow
+        }
+
+        val preferred = request.providerPreference ?: "OpenRouter"
+        val sortedProviders = providers.sortedByDescending { it.providerName.contains(preferred, ignoreCase = true) }
+
+        for (provider in sortedProviders) {
+            if (!provider.isHealthy()) continue
+            emitAll(provider.generateStream(request))
+            return@flow
+        }
+
+        emit(FlintResult.Error(AppError.AiProvider("All configured streaming AI providers failed")))
     }
 }
