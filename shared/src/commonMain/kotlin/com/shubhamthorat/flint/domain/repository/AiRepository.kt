@@ -6,6 +6,7 @@ import com.shubhamthorat.flint.domain.model.FlintResult
 data class AiRequest(
     val prompt: String,
     val providerPreference: String? = null,
+    val modelName: String? = null,
     val maxTokens: Int = 1024,
     val temperature: Float = 0.7f
 )

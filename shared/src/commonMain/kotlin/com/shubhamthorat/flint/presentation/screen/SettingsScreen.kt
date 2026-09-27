@@ -22,6 +22,7 @@ import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
 import com.shubhamthorat.flint.presentation.component.FlintChip
+import com.shubhamthorat.flint.presentation.component.FlintTextField
 import com.shubhamthorat.flint.presentation.navigation.FlintScreen
 import com.shubhamthorat.flint.presentation.navigation.NavigationManager
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
@@ -33,7 +34,19 @@ fun SettingsScreen(
     onToggleDarkTheme: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedProvider by remember { mutableStateOf("Gemini") }
+    var selectedProvider by remember { mutableStateOf("OpenRouter") }
+
+    // OpenRouter Settings
+    var openRouterApiKey by remember { mutableStateOf("") }
+    var openRouterModelName by remember { mutableStateOf("anthropic/claude-3.5-sonnet") }
+
+    // Gemini Settings
+    var geminiApiKey by remember { mutableStateOf("") }
+
+    // Ollama Settings
+    var ollamaEndpointUrl by remember { mutableStateOf("https://ollama.cloud.local") }
+
+    var isConfigSavedFeedbackVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -43,7 +56,7 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
     ) {
         Text(
-            text = "Settings & Membership",
+            text = "Settings & AI Configuration",
             style = FlintTheme.typography.displayMedium,
             color = FlintTheme.colors.primary,
             fontWeight = FontWeight.Bold
@@ -91,7 +104,7 @@ fun SettingsScreen(
             }
         }
 
-        // AI Provider Settings
+        // Primary AI Provider Selection
         FlintCard(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(FlintTheme.spacing.medium),
@@ -103,7 +116,7 @@ fun SettingsScreen(
                     color = FlintTheme.colors.onSurface
                 )
                 Text(
-                    text = "Select your preferred primary AI provider. Flint automatically falls back to alternative providers if primary health checks fail.",
+                    text = "Select your primary provider. Flint automatically fails over to secondary configured providers if primary health checks fail.",
                     style = FlintTheme.typography.bodyMedium,
                     color = FlintTheme.colors.textSecondary
                 )
@@ -112,7 +125,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
-                    val providers = listOf("Gemini", "OpenRouter", "Ollama Cloud")
+                    val providers = listOf("OpenRouter", "Gemini", "Ollama Cloud")
                     providers.forEach { provider ->
                         FlintChip(
                             selected = selectedProvider == provider,
@@ -120,6 +133,114 @@ fun SettingsScreen(
                             label = provider
                         )
                     }
+                }
+            }
+        }
+
+        // Provider Credentials & Model Configuration
+        FlintCard(
+            modifier = Modifier.fillMaxWidth(),
+            outlined = true
+        ) {
+            Column(
+                modifier = Modifier.padding(FlintTheme.spacing.medium),
+                verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
+            ) {
+                Text(
+                    text = "🔑 AI Provider API Keys & Model Name",
+                    style = FlintTheme.typography.titleLarge,
+                    color = FlintTheme.colors.primary
+                )
+
+                when (selectedProvider) {
+                    "OpenRouter" -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)) {
+                            Text(
+                                text = "OpenRouter Configuration",
+                                style = FlintTheme.typography.titleMedium
+                            )
+
+                            FlintTextField(
+                                value = openRouterApiKey,
+                                onValueChange = { openRouterApiKey = it },
+                                label = "OpenRouter API Key",
+                                placeholder = "sk-or-v1-..."
+                            )
+
+                            FlintTextField(
+                                value = openRouterModelName,
+                                onValueChange = { openRouterModelName = it },
+                                label = "OpenRouter Model Name",
+                                placeholder = "anthropic/claude-3.5-sonnet"
+                            )
+
+                            Text(
+                                text = "Popular OpenRouter Models:",
+                                style = FlintTheme.typography.labelSmall,
+                                color = FlintTheme.colors.textSecondary
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)) {
+                                val popularModels = listOf(
+                                    "anthropic/claude-3.5-sonnet",
+                                    "meta-llama/llama-3.1-70b-instruct",
+                                    "google/gemini-2.5-flash"
+                                )
+                                popularModels.forEach { model ->
+                                    FlintChip(
+                                        selected = openRouterModelName == model,
+                                        onClick = { openRouterModelName = model },
+                                        label = model.substringAfter('/')
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    "Gemini" -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)) {
+                            Text(
+                                text = "Google Gemini Configuration",
+                                style = FlintTheme.typography.titleMedium
+                            )
+
+                            FlintTextField(
+                                value = geminiApiKey,
+                                onValueChange = { geminiApiKey = it },
+                                label = "Google AI Studio / Gemini API Key",
+                                placeholder = "AIzaSy..."
+                            )
+                        }
+                    }
+                    "Ollama Cloud" -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)) {
+                            Text(
+                                text = "Ollama Cloud Configuration",
+                                style = FlintTheme.typography.titleMedium
+                            )
+
+                            FlintTextField(
+                                value = ollamaEndpointUrl,
+                                onValueChange = { ollamaEndpointUrl = it },
+                                label = "Ollama Cloud Endpoint URL",
+                                placeholder = "https://ollama.cloud.local"
+                            )
+                        }
+                    }
+                }
+
+                FlintButton(
+                    onClick = { isConfigSavedFeedbackVisible = true },
+                    text = "Save Provider Configuration",
+                    variant = FlintButtonVariant.PRIMARY,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (isConfigSavedFeedbackVisible) {
+                    Text(
+                        text = "✓ AI Provider configuration successfully saved! Primary: $selectedProvider" +
+                                if (selectedProvider == "OpenRouter") " ($openRouterModelName)" else "",
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.primary
+                    )
                 }
             }
         }

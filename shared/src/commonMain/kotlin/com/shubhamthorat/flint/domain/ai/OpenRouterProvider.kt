@@ -6,16 +6,18 @@ import com.shubhamthorat.flint.domain.repository.AiRequest
 import com.shubhamthorat.flint.domain.repository.AiResponse
 
 class OpenRouterProvider(
-    private val apiKey: String? = null
+    val apiKey: String? = null,
+    val modelName: String = "anthropic/claude-3.5-sonnet"
 ) : AiProvider {
 
-    override val providerName: String = "OpenRouter"
+    override val providerName: String = "OpenRouter ($modelName)"
 
     override suspend fun generate(request: AiRequest): FlintResult<AiResponse, AppError> {
+        val effectiveModel = request.modelName ?: modelName
         return FlintResult.Success(
             AiResponse(
-                content = "OpenRouter response for prompt: ${request.prompt}",
-                providerUsed = providerName,
+                content = "OpenRouter [$effectiveModel] response for prompt: ${request.prompt}",
+                providerUsed = "OpenRouter ($effectiveModel)",
                 tokensUsed = request.prompt.length * 2
             )
         )
