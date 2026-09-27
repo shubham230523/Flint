@@ -26,11 +26,12 @@ class GenerateContentUseCase(
         val aiRequest = AiRequest(prompt = prompt)
 
         return aiRepository.generateContent(aiRequest).map { response ->
+            val cleanedBody = com.shubhamthorat.flint.domain.ai.AiContentCleaner.clean(response.content)
             val asset = ContentAsset(
                 id = "asset_${targetType.name.lowercase()}",
                 sourceId = null,
                 title = "Generated ${targetType.name.replace('_', ' ')}",
-                body = response.content,
+                body = cleanedBody,
                 type = targetType,
                 status = ContentStatus.DRAFT,
                 platform = getPlatformForType(targetType)
@@ -48,6 +49,8 @@ class GenerateContentUseCase(
             Style: ${dna.writingStyle}
             Audience: ${dna.targetAudience}
             CTA Style: ${dna.ctaStyle}
+            
+            Instruction: Provide ONLY the final generated content. Do not include any internal thinking process, analysis, or introductory preamble.
             
             Source Material:
             $sourceText

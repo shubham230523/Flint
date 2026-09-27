@@ -131,7 +131,7 @@ class OpenRouterProvider(
             }
 
             val choice = response.choices?.firstOrNull()
-            val generatedContent = extractTextFromChoice(choice)
+            val generatedContent = extractTextFromChoice(choice)?.let { AiContentCleaner.clean(it) }
 
             if (generatedContent.isNullOrBlank()) {
                 FlintLogger.w(tag, "Non-stream response empty. Retrying with stream mode...")
@@ -215,14 +215,16 @@ class OpenRouterProvider(
                 return FlintResult.Error(AppError.AiProvider("OpenRouter API Error: $lastErrorMsg"))
             }
 
-            if (accumulatedText.isBlank()) {
+            val cleanedText = AiContentCleaner.clean(accumulatedText)
+
+            if (cleanedText.isBlank()) {
                 FlintLogger.e(tag, "OpenRouter API stream returned blank text")
                 return FlintResult.Error(AppError.AiProvider("OpenRouter API returned an empty response."))
             }
 
             FlintResult.Success(
                 AiResponse(
-                    content = accumulatedText,
+                    content = cleanedText,
                     providerUsed = "OpenRouter REST API ($effectiveModel)",
                     tokensUsed = request.prompt.length * 2
                 )
