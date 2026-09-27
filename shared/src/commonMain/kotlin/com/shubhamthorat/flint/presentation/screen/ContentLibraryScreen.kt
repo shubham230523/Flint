@@ -10,65 +10,41 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.shubhamthorat.flint.domain.repository.ContentAsset
+import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentStatus
-import com.shubhamthorat.flint.domain.repository.ContentType
 import com.shubhamthorat.flint.presentation.component.FlintAlertDialog
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
 import com.shubhamthorat.flint.presentation.component.FlintChip
 import com.shubhamthorat.flint.presentation.component.FlintTextField
+import com.shubhamthorat.flint.presentation.navigation.FlintScreen
+import com.shubhamthorat.flint.presentation.navigation.NavigationManager
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
 
 @Composable
 fun ContentLibraryScreen(
+    navigationManager: NavigationManager,
+    contentRepository: ContentRepository,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
     var selectedAssetForDetail by remember { mutableStateOf<ContentAsset?>(null) }
 
-    val sampleAssets = remember {
-        listOf(
-            ContentAsset(
-                id = "1",
-                sourceId = "s1",
-                title = "10 Reasons KMP is Ready for Production",
-                body = "Kotlin Multiplatform gives mobile & desktop teams shared code without compromising UI speed. Here are 10 key architectural wins...",
-                type = ContentType.LINKEDIN_POST,
-                status = ContentStatus.PUBLISHED,
-                platform = "LinkedIn"
-            ),
-            ContentAsset(
-                id = "2",
-                sourceId = "s1",
-                title = "Flint Architecture Breakdown",
-                body = "1/ Thread on building a KMP AI Operating System with Clean Architecture, Ktor, and Coroutines Flow. 🧵",
-                type = ContentType.X_THREAD,
-                status = ContentStatus.DRAFT,
-                platform = "X (Twitter)"
-            ),
-            ContentAsset(
-                id = "3",
-                sourceId = "s2",
-                title = "Weekly Creator Spark #42",
-                body = "Welcome to issue #42. Today we cover AI Task Routers and fallback strategies for 99.9% uptime...",
-                type = ContentType.NEWSLETTER,
-                status = ContentStatus.SCHEDULED,
-                platform = "Substack"
-            )
-        )
-    }
+    val assets by contentRepository.observeContentAssets().collectAsState(initial = emptyList())
 
-    val filteredAssets = remember(searchQuery, selectedFilter) {
-        sampleAssets.filter { asset ->
+    val filteredAssets = remember(assets, searchQuery, selectedFilter) {
+        assets.filter { asset ->
             val matchesQuery = searchQuery.isBlank() || asset.title.contains(searchQuery, ignoreCase = true) || asset.body.contains(searchQuery, ignoreCase = true)
             val matchesFilter = when (selectedFilter) {
                 "All" -> true
@@ -107,7 +83,7 @@ fun ContentLibraryScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
         ) {
-            val filters = listOf("All", "Drafts", "Published", "LinkedIn", "X (Twitter)", "Substack")
+            val filters = listOf("All", "Drafts", "Published", "LinkedIn", "X Thread", "Newsletter")
             filters.forEach { filter ->
                 FlintChip(
                     selected = selectedFilter == filter,
@@ -117,54 +93,84 @@ fun ContentLibraryScreen(
             }
         }
 
-        // Asset Cards Grid
-        filteredAssets.forEach { asset ->
+        if (filteredAssets.isEmpty()) {
             FlintCard(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { selectedAssetForDetail = asset }
+                outlined = true
             ) {
                 Column(
-                    modifier = Modifier.padding(FlintTheme.spacing.medium),
+                    modifier = Modifier.padding(FlintTheme.spacing.large),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = asset.title,
-                            style = FlintTheme.typography.titleLarge,
-                            color = FlintTheme.colors.onSurface
-                        )
-                        FlintChip(
-                            selected = asset.status == ContentStatus.PUBLISHED,
-                            onClick = {},
-                            label = asset.status.name
-                        )
-                    }
-
                     Text(
-                        text = asset.body,
-                        style = FlintTheme.typography.bodyMedium,
-                        color = FlintTheme.colors.textSecondary,
-                        maxLines = 2
+                        text = "Your content library is empty.",
+                        style = FlintTheme.typography.titleLarge,
+                        color = FlintTheme.colors.primary,
+                        fontWeight = FontWeight.Bold
                     )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Text(
+                        text = "Generate your first campaign in the Spark workspace to populate your library.",
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.textSecondary
+                    )
+                    FlintButton(
+                        onClick = { navigationManager.navigateTo(FlintScreen.Create) },
+                        text = "✨ Create New Spark",
+                        variant = FlintButtonVariant.PRIMARY
+                    )
+                }
+            }
+        } else {
+            // Asset Cards Grid
+            filteredAssets.forEach { asset ->
+                FlintCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { selectedAssetForDetail = asset }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(FlintTheme.spacing.medium),
+                        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                     ) {
-                        FlintChip(
-                            selected = false,
-                            onClick = {},
-                            label = asset.platform
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = asset.title,
+                                style = FlintTheme.typography.titleLarge,
+                                color = FlintTheme.colors.onSurface
+                            )
+                            FlintChip(
+                                selected = asset.status == ContentStatus.PUBLISHED,
+                                onClick = {},
+                                label = asset.status.name
+                            )
+                        }
+
+                        Text(
+                            text = asset.body,
+                            style = FlintTheme.typography.bodyMedium,
+                            color = FlintTheme.colors.textSecondary,
+                            maxLines = 2
                         )
 
-                        FlintButton(
-                            onClick = { selectedAssetForDetail = asset },
-                            text = "View & Edit",
-                            variant = FlintButtonVariant.TEXT
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            FlintChip(
+                                selected = false,
+                                onClick = {},
+                                label = asset.platform
+                            )
+
+                            FlintButton(
+                                onClick = { selectedAssetForDetail = asset },
+                                text = "View & Edit",
+                                variant = FlintButtonVariant.TEXT
+                            )
+                        }
                     }
                 }
             }

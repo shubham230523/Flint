@@ -26,6 +26,8 @@ import com.shubhamthorat.flint.domain.ai.FakeAiProvider
 import com.shubhamthorat.flint.domain.model.Campaign
 import com.shubhamthorat.flint.domain.model.CreatorDNA
 import com.shubhamthorat.flint.domain.model.FlintResult
+import com.shubhamthorat.flint.domain.repository.CampaignRepository
+import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentType
 import com.shubhamthorat.flint.domain.usecase.CreateSparkCampaignUseCase
 import com.shubhamthorat.flint.domain.usecase.GenerateContentUseCase
@@ -43,9 +45,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun CreateSparkScreen(
     navigationManager: NavigationManager,
+    campaignRepository: CampaignRepository,
+    contentRepository: ContentRepository,
     modifier: Modifier = Modifier
 ) {
-    var sourceText by remember { mutableStateOf("Kotlin Multiplatform allows sharing business logic across Android, iOS, Desktop, and Web while maintaining native UI performance.") }
+    var sourceText by remember { mutableStateOf("") }
     var selectedTone by remember { mutableStateOf("Conversational") }
     var isGenerating by remember { mutableStateOf(false) }
     var generatedCampaign by remember { mutableStateOf<Campaign?>(null) }
@@ -172,7 +176,12 @@ fun CreateSparkScreen(
                         val dna = CreatorDNA(preferredTone = selectedTone)
                         val result = campaignUseCase.execute(sourceText, selectedTypes.toList(), dna)
                         if (result is FlintResult.Success) {
-                            generatedCampaign = result.data
+                            val campaign = result.data
+                            generatedCampaign = campaign
+                            campaignRepository.saveCampaign(campaign)
+                            campaign.items.forEach { asset ->
+                                contentRepository.saveContent(asset)
+                            }
                         }
                         isGenerating = false
                     }
@@ -243,7 +252,7 @@ fun CreateSparkScreen(
                         ) {
                             FlintButton(
                                 onClick = { navigationManager.navigateTo(FlintScreen.ContentLibrary) },
-                                text = "Save to Library",
+                                text = "View in Library",
                                 variant = FlintButtonVariant.SECONDARY
                             )
                         }

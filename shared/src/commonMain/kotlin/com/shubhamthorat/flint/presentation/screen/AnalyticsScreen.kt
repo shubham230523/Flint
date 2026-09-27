@@ -10,21 +10,33 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import com.shubhamthorat.flint.domain.repository.ContentRepository
+import com.shubhamthorat.flint.domain.repository.ContentStatus
+import com.shubhamthorat.flint.presentation.component.FlintButton
+import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
 import com.shubhamthorat.flint.presentation.component.FlintChip
+import com.shubhamthorat.flint.presentation.navigation.FlintScreen
+import com.shubhamthorat.flint.presentation.navigation.NavigationManager
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
 
 @Composable
 fun AnalyticsScreen(
+    navigationManager: NavigationManager,
+    contentRepository: ContentRepository,
     modifier: Modifier = Modifier
 ) {
     var selectedTimeRange by remember { mutableStateOf("30 Days") }
+    val assets by contentRepository.observeContentAssets().collectAsState(initial = emptyList())
+    val publishedAssets = remember(assets) { assets.filter { it.status == ContentStatus.PUBLISHED } }
 
     Column(
         modifier = modifier
@@ -54,87 +66,84 @@ fun AnalyticsScreen(
             }
         }
 
-        // Metrics Overview Grid
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
-        ) {
-            FlintCard(modifier = Modifier.weight(1f)) {
-                Column(
-                    modifier = Modifier.padding(FlintTheme.spacing.medium),
-                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
-                ) {
-                    Text(text = "Total Impressions", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.textSecondary)
-                    Text(text = "128,450", style = FlintTheme.typography.displayMedium, color = FlintTheme.colors.primary, fontWeight = FontWeight.Bold)
-                    Text(text = "↑ +24% vs last period", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.primary)
-                }
-            }
-
-            FlintCard(modifier = Modifier.weight(1f)) {
-                Column(
-                    modifier = Modifier.padding(FlintTheme.spacing.medium),
-                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
-                ) {
-                    Text(text = "Avg. Engagement", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.textSecondary)
-                    Text(text = "6.8%", style = FlintTheme.typography.displayMedium, color = FlintTheme.colors.secondary, fontWeight = FontWeight.Bold)
-                    Text(text = "↑ +1.2% higher", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.secondary)
-                }
-            }
-        }
-
-        // Platform Breakdown
-        Text(
-            text = "Channel Performance Breakdown",
-            style = FlintTheme.typography.headlineMedium,
-            color = FlintTheme.colors.onSurface
-        )
-
-        val channels = listOf(
-            Triple("LinkedIn", "54,200 Impressions", "8.2% Engagement"),
-            Triple("X (Twitter)", "48,100 Impressions", "5.4% Engagement"),
-            Triple("Substack Newsletter", "26,150 Opens", "42.5% Open Rate")
-        )
-
-        channels.forEach { (platform, views, engagement) ->
+        if (assets.isEmpty()) {
             FlintCard(
                 modifier = Modifier.fillMaxWidth(),
                 outlined = true
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(FlintTheme.spacing.medium),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier.padding(FlintTheme.spacing.large),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
-                    Column {
-                        Text(text = platform, style = FlintTheme.typography.titleLarge, color = FlintTheme.colors.onSurface)
-                        Text(text = views, style = FlintTheme.typography.bodyMedium, color = FlintTheme.colors.textSecondary)
-                    }
-                    FlintChip(selected = true, onClick = {}, label = engagement)
+                    Text(
+                        text = "Publish something. We'll start learning.",
+                        style = FlintTheme.typography.titleLarge,
+                        color = FlintTheme.colors.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "No analytics history recorded yet. Publish your generated content to track impressions, engagement, and AI performance learning.",
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.textSecondary
+                    )
+                    FlintButton(
+                        onClick = { navigationManager.navigateTo(FlintScreen.Create) },
+                        text = "✨ Create & Publish Spark",
+                        variant = FlintButtonVariant.PRIMARY
+                    )
                 }
             }
-        }
-
-        // AI Learning Insights
-        FlintCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(FlintTheme.spacing.medium),
-                verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+        } else {
+            // Metrics Overview Grid
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
             ) {
-                Text(
-                    text = "🤖 AI Performance Insights",
-                    style = FlintTheme.typography.titleLarge,
-                    color = FlintTheme.colors.primary
-                )
-                Text(
-                    text = "• Posts starting with a 'Question Hook' received 38% more comments on LinkedIn.\n" +
-                            "• 'Conversational' tone generated 2.4x more newsletter clicks than 'Authoritative'.\n" +
-                            "• Creator DNA tone tokens have been automatically adjusted to favor high-engagement hooks.",
-                    style = FlintTheme.typography.bodyMedium,
-                    color = FlintTheme.colors.onSurface
-                )
+                FlintCard(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier.padding(FlintTheme.spacing.medium),
+                        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+                    ) {
+                        Text(text = "Total Assets Generated", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.textSecondary)
+                        Text(text = "${assets.size}", style = FlintTheme.typography.displayMedium, color = FlintTheme.colors.primary, fontWeight = FontWeight.Bold)
+                        Text(text = "Active in library", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.primary)
+                    }
+                }
+
+                FlintCard(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier.padding(FlintTheme.spacing.medium),
+                        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+                    ) {
+                        Text(text = "Published Posts", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.textSecondary)
+                        Text(text = "${publishedAssets.size}", style = FlintTheme.typography.displayMedium, color = FlintTheme.colors.secondary, fontWeight = FontWeight.Bold)
+                        Text(text = "Live across channels", style = FlintTheme.typography.labelSmall, color = FlintTheme.colors.secondary)
+                    }
+                }
+            }
+
+            // AI Learning Insights
+            FlintCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(FlintTheme.spacing.medium),
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                ) {
+                    Text(
+                        text = "🤖 AI Performance Learning Insights",
+                        style = FlintTheme.typography.titleLarge,
+                        color = FlintTheme.colors.primary
+                    )
+                    Text(
+                        text = "• ${assets.size} content assets generated using active Creator DNA brand voice.\n" +
+                                "• Primary selected AI Provider is actively learning hook engagement patterns.\n" +
+                                "• Creator DNA tone parameters automatically tuned for optimal audience resonance.",
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.onSurface
+                    )
+                }
             }
         }
     }

@@ -12,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import com.shubhamthorat.flint.domain.monetization.FreePlanLimits
 import com.shubhamthorat.flint.domain.monetization.QuotaCalculator
 import com.shubhamthorat.flint.domain.monetization.UserUsage
+import com.shubhamthorat.flint.domain.repository.CampaignRepository
+import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
@@ -31,9 +35,20 @@ import com.shubhamthorat.flint.presentation.theme.FlintTheme
 @Composable
 fun DashboardScreen(
     navigationManager: NavigationManager,
+    campaignRepository: CampaignRepository,
+    contentRepository: ContentRepository,
     modifier: Modifier = Modifier
 ) {
-    val usage = remember { UserUsage(aiGenerationsCount = 4, projectsCount = 2, campaignsCount = 1) }
+    val campaigns by campaignRepository.observeCampaigns().collectAsState(initial = emptyList())
+    val contentAssets by contentRepository.observeContentAssets().collectAsState(initial = emptyList())
+
+    val usage = remember(campaigns.size, contentAssets.size) {
+        UserUsage(
+            aiGenerationsCount = contentAssets.size,
+            projectsCount = campaigns.size,
+            campaignsCount = campaigns.size
+        )
+    }
     val quotaCalculator = remember(usage) { QuotaCalculator(usage = usage, isMember = false) }
 
     Column(
@@ -133,72 +148,73 @@ fun DashboardScreen(
             }
         }
 
-        // Recent Sparks & Projects
+        // Recent Sparks & Campaigns
         Text(
             text = "Recent Sparks & Campaigns",
             style = FlintTheme.typography.headlineMedium,
             color = FlintTheme.colors.onSurface
         )
 
-        FlintCard(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { navigationManager.navigateTo(FlintScreen.Campaigns) }
-        ) {
-            Column(
-                modifier = Modifier.padding(FlintTheme.spacing.medium),
-                verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+        if (campaigns.isEmpty() && contentAssets.isEmpty()) {
+            FlintCard(
+                modifier = Modifier.fillMaxWidth(),
+                outlined = true
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier.padding(FlintTheme.spacing.large),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
                     Text(
-                        text = "Kotlin Multiplatform 2.0 Launch",
+                        text = "Every story starts somewhere.",
                         style = FlintTheme.typography.titleLarge,
-                        color = FlintTheme.colors.onSurface
+                        color = FlintTheme.colors.primary,
+                        fontWeight = FontWeight.Bold
                     )
-                    FlintChip(
-                        selected = true,
-                        onClick = {},
-                        label = "3 Assets"
+                    Text(
+                        text = "Your dashboard is ready. Click '✨ New Spark' to generate your first multi-channel campaign.",
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.textSecondary
+                    )
+                    FlintButton(
+                        onClick = { navigationManager.navigateTo(FlintScreen.Create) },
+                        text = "Create First Spark",
+                        variant = FlintButtonVariant.PRIMARY
                     )
                 }
-                Text(
-                    text = "Generated LinkedIn post, X Thread & Substack Newsletter from 1 source idea.",
-                    style = FlintTheme.typography.bodyMedium,
-                    color = FlintTheme.colors.textSecondary
-                )
             }
-        }
-
-        FlintCard(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { navigationManager.navigateTo(FlintScreen.ContentLibrary) }
-        ) {
-            Column(
-                modifier = Modifier.padding(FlintTheme.spacing.medium),
-                verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
-            ) {
-                Row(
+        } else {
+            campaigns.forEach { campaign ->
+                FlintCard(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    onClick = { navigationManager.navigateTo(FlintScreen.Campaigns) }
                 ) {
-                    Text(
-                        text = "Building Flint - KMP AI Operating System",
-                        style = FlintTheme.typography.titleLarge,
-                        color = FlintTheme.colors.onSurface
-                    )
-                    FlintChip(
-                        selected = false,
-                        onClick = {},
-                        label = "Draft"
-                    )
+                    Column(
+                        modifier = Modifier.padding(FlintTheme.spacing.medium),
+                        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = campaign.title,
+                                style = FlintTheme.typography.titleLarge,
+                                color = FlintTheme.colors.onSurface
+                            )
+                            FlintChip(
+                                selected = true,
+                                onClick = {},
+                                label = "${campaign.items.size} Assets"
+                            )
+                        }
+                        Text(
+                            text = "Source Idea: \"${campaign.ideaOrSource}\"",
+                            style = FlintTheme.typography.bodyMedium,
+                            color = FlintTheme.colors.textSecondary
+                        )
+                    }
                 }
-                Text(
-                    text = "YouTube Script & LinkedIn Carousel draft ready for review.",
-                    style = FlintTheme.typography.bodyMedium,
-                    color = FlintTheme.colors.textSecondary
-                )
             }
         }
     }

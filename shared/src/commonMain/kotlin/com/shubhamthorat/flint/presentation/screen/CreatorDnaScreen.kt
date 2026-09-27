@@ -10,26 +10,34 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.shubhamthorat.flint.domain.model.CreatorDNA
+import com.shubhamthorat.flint.domain.model.CreatorProfile
+import com.shubhamthorat.flint.domain.repository.CreatorDnaRepository
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
 import com.shubhamthorat.flint.presentation.component.FlintChip
 import com.shubhamthorat.flint.presentation.component.FlintTextField
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun CreatorDnaScreen(
+    creatorDnaRepository: CreatorDnaRepository,
     modifier: Modifier = Modifier
 ) {
-    var dna by remember { mutableStateOf(CreatorDNA()) }
+    val activeProfile by creatorDnaRepository.observeProfile().collectAsState(initial = CreatorProfile("user_default", "@creator"))
+    var dnaState by remember(activeProfile) { mutableStateOf(activeProfile?.dna ?: CreatorDNA()) }
     var isSavedMessageVisible by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = modifier
@@ -61,17 +69,17 @@ fun CreatorDnaScreen(
                 verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
             ) {
                 Text(
-                    text = "🧬 Active DNA Profile",
+                    text = "🧬 Active DNA Profile (${activeProfile?.handle ?: "@creator"})",
                     style = FlintTheme.typography.titleLarge,
                     color = FlintTheme.colors.primary
                 )
                 Text(
-                    text = "Tone: ${dna.preferredTone} | Style: ${dna.writingStyle} | Audience: ${dna.targetAudience}",
+                    text = "Tone: ${dnaState.preferredTone} | Style: ${dnaState.writingStyle} | Audience: ${dnaState.targetAudience}",
                     style = FlintTheme.typography.bodyMedium,
                     color = FlintTheme.colors.onSurface
                 )
                 Text(
-                    text = "Niche: ${dna.niche} | CTA: ${dna.ctaStyle} | Humor Level: ${dna.humorLevel}/5",
+                    text = "Niche: ${dnaState.niche} | CTA: ${dnaState.ctaStyle} | Humor Level: ${dnaState.humorLevel}/5",
                     style = FlintTheme.typography.bodyMedium,
                     color = FlintTheme.colors.textSecondary
                 )
@@ -87,29 +95,29 @@ fun CreatorDnaScreen(
                 Text(text = "Brand Voice Controls", style = FlintTheme.typography.titleLarge)
 
                 FlintTextField(
-                    value = dna.preferredTone,
-                    onValueChange = { dna = dna.copy(preferredTone = it) },
+                    value = dnaState.preferredTone,
+                    onValueChange = { dnaState = dnaState.copy(preferredTone = it) },
                     label = "Preferred Tone",
                     placeholder = "Conversational, Authoritative, Witty..."
                 )
 
                 FlintTextField(
-                    value = dna.writingStyle,
-                    onValueChange = { dna = dna.copy(writingStyle = it) },
+                    value = dnaState.writingStyle,
+                    onValueChange = { dnaState = dnaState.copy(writingStyle = it) },
                     label = "Writing Style",
                     placeholder = "Story-driven, Data-backed, Punchy..."
                 )
 
                 FlintTextField(
-                    value = dna.targetAudience,
-                    onValueChange = { dna = dna.copy(targetAudience = it) },
+                    value = dnaState.targetAudience,
+                    onValueChange = { dnaState = dnaState.copy(targetAudience = it) },
                     label = "Target Audience",
                     placeholder = "Software Engineers, Tech Creators..."
                 )
 
                 FlintTextField(
-                    value = dna.niche,
-                    onValueChange = { dna = dna.copy(niche = it) },
+                    value = dnaState.niche,
+                    onValueChange = { dnaState = dnaState.copy(niche = it) },
                     label = "Content Niche",
                     placeholder = "Kotlin Multiplatform, AI Operating Systems..."
                 )
@@ -121,8 +129,8 @@ fun CreatorDnaScreen(
                 ) {
                     (1..5).forEach { level ->
                         FlintChip(
-                            selected = dna.humorLevel == level,
-                            onClick = { dna = dna.copy(humorLevel = level) },
+                            selected = dnaState.humorLevel == level,
+                            onClick = { dnaState = dnaState.copy(humorLevel = level) },
                             label = "Level $level"
                         )
                     }
@@ -131,7 +139,13 @@ fun CreatorDnaScreen(
         }
 
         FlintButton(
-            onClick = { isSavedMessageVisible = true },
+            onClick = {
+                coroutineScope.launch {
+                    val updated = (activeProfile ?: CreatorProfile("user_default", "@creator")).copy(dna = dnaState)
+                    creatorDnaRepository.updateProfile(updated)
+                    isSavedMessageVisible = true
+                }
+            },
             text = "Save Creator DNA",
             variant = FlintButtonVariant.PRIMARY,
             modifier = Modifier.fillMaxWidth()

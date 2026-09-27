@@ -10,12 +10,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import com.shubhamthorat.flint.domain.repository.ContentRepository
+import com.shubhamthorat.flint.domain.repository.ContentStatus
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
@@ -24,29 +28,15 @@ import com.shubhamthorat.flint.presentation.navigation.FlintScreen
 import com.shubhamthorat.flint.presentation.navigation.NavigationManager
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
 
-data class ScheduledPost(
-    val id: String,
-    val title: String,
-    val platform: String,
-    val dateText: String,
-    val timeText: String,
-    val status: String = "SCHEDULED"
-)
-
 @Composable
 fun CalendarScreen(
     navigationManager: NavigationManager,
+    contentRepository: ContentRepository,
     modifier: Modifier = Modifier
 ) {
     var selectedViewMode by remember { mutableStateOf("Month View") }
-
-    val scheduledPosts = remember {
-        listOf(
-            ScheduledPost("1", "KMP 2.0 Production Guide", "LinkedIn", "Tomorrow", "10:00 AM"),
-            ScheduledPost("2", "AI Task Router Failover Thread", "X (Twitter)", "Thu, Oct 1", "02:30 PM"),
-            ScheduledPost("3", "Flint Weekly Substack Issue #43", "Substack", "Sat, Oct 3", "09:00 AM")
-        )
-    }
+    val assets by contentRepository.observeContentAssets().collectAsState(initial = emptyList())
+    val scheduledAssets = remember(assets) { assets.filter { it.status == ContentStatus.SCHEDULED } }
 
     Column(
         modifier = modifier
@@ -94,12 +84,12 @@ fun CalendarScreen(
                 verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
             ) {
                 Text(
-                    text = "October 2026 Schedule",
+                    text = "Publication Schedule",
                     style = FlintTheme.typography.titleLarge,
                     color = FlintTheme.colors.primary
                 )
                 Text(
-                    text = "3 posts scheduled across LinkedIn, X Thread, and Substack this week.",
+                    text = "${scheduledAssets.size} posts scheduled across your active social channels.",
                     style = FlintTheme.typography.bodyMedium,
                     color = FlintTheme.colors.textSecondary
                 )
@@ -113,35 +103,65 @@ fun CalendarScreen(
             color = FlintTheme.colors.onSurface
         )
 
-        scheduledPosts.forEach { post ->
+        if (scheduledAssets.isEmpty()) {
             FlintCard(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                outlined = true
             ) {
                 Column(
-                    modifier = Modifier.padding(FlintTheme.spacing.medium),
-                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+                    modifier = Modifier.padding(FlintTheme.spacing.large),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = post.title,
-                            style = FlintTheme.typography.titleLarge,
-                            color = FlintTheme.colors.onSurface
-                        )
-                        FlintChip(
-                            selected = true,
-                            onClick = {},
-                            label = post.status
-                        )
-                    }
-
                     Text(
-                        text = "📅 ${post.dateText} at ${post.timeText} • ${post.platform}",
+                        text = "No scheduled publications yet.",
+                        style = FlintTheme.typography.titleLarge,
+                        color = FlintTheme.colors.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Schedule generated posts from your Spark workspace or Content Library to see them on your calendar timeline.",
                         style = FlintTheme.typography.bodyMedium,
                         color = FlintTheme.colors.textSecondary
                     )
+                    FlintButton(
+                        onClick = { navigationManager.navigateTo(FlintScreen.Create) },
+                        text = "✨ Create & Schedule Spark",
+                        variant = FlintButtonVariant.PRIMARY
+                    )
+                }
+            }
+        } else {
+            scheduledAssets.forEach { post ->
+                FlintCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(FlintTheme.spacing.medium),
+                        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = post.title,
+                                style = FlintTheme.typography.titleLarge,
+                                color = FlintTheme.colors.onSurface
+                            )
+                            FlintChip(
+                                selected = true,
+                                onClick = {},
+                                label = post.status.name
+                            )
+                        }
+
+                        Text(
+                            text = "📅 Scheduled for ${post.platform}",
+                            style = FlintTheme.typography.bodyMedium,
+                            color = FlintTheme.colors.textSecondary
+                        )
+                    }
                 }
             }
         }
