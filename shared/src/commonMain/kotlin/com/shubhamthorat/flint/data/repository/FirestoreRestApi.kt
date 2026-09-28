@@ -35,7 +35,8 @@ class FirestoreRestApi(
     private val tag = "FirestoreRestApi"
 
     suspend fun saveCampaign(userId: String, campaign: Campaign, idToken: String? = null): FlintResult<Campaign, AppError> {
-        val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/campaigns/${campaign.id}?key=$apiKey"
+        val updateMask = "updateMask.fieldPaths=id&updateMask.fieldPaths=title&updateMask.fieldPaths=ideaOrSource&updateMask.fieldPaths=items&updateMask.fieldPaths=createdAtTimestamp"
+        val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/campaigns/${campaign.id}?key=$apiKey&$updateMask"
         return try {
             val bodyJson = buildJsonObject {
                 put("fields", buildJsonObject {
@@ -71,6 +72,9 @@ class FirestoreRestApi(
             if (response.status.isSuccess()) {
                 FlintLogger.i(tag, "Successfully saved Campaign ID ${campaign.id} to Firestore via REST")
                 FlintResult.Success(campaign)
+            } else if (response.status.value == 403) {
+                FlintLogger.e(tag, "Firestore Permission Denied (HTTP 403). Security rules blocking writes.")
+                FlintResult.Error(AppError.Storage("Firestore Security Rules Error (403): Access denied by Firebase Console Firestore Rules. Update Rules in Firebase Console to 'allow read, write: if true;'"))
             } else {
                 FlintLogger.e(tag, "Failed to save Campaign via REST HTTP ${response.status.value}: $responseText")
                 FlintResult.Error(AppError.Storage("Firestore REST error (${response.status.value}): $responseText"))
@@ -104,7 +108,8 @@ class FirestoreRestApi(
     }
 
     suspend fun saveContent(userId: String, asset: ContentAsset, idToken: String? = null): FlintResult<ContentAsset, AppError> {
-        val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/content/${asset.id}?key=$apiKey"
+        val updateMask = "updateMask.fieldPaths=id&updateMask.fieldPaths=sourceId&updateMask.fieldPaths=title&updateMask.fieldPaths=body&updateMask.fieldPaths=type&updateMask.fieldPaths=status&updateMask.fieldPaths=platform&updateMask.fieldPaths=createdAtTimestamp"
+        val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/content/${asset.id}?key=$apiKey&$updateMask"
         return try {
             val bodyJson = buildJsonObject {
                 put("fields", buildContentAssetFields(asset))
@@ -122,6 +127,9 @@ class FirestoreRestApi(
             if (response.status.isSuccess()) {
                 FlintLogger.i(tag, "Successfully saved ContentAsset ID ${asset.id} (${asset.title}) to Firestore via REST")
                 FlintResult.Success(asset)
+            } else if (response.status.value == 403) {
+                FlintLogger.e(tag, "Firestore Permission Denied (HTTP 403). Security rules blocking writes.")
+                FlintResult.Error(AppError.Storage("Firestore Security Rules Error (403): Access denied by Firebase Console Firestore Rules. Update Rules in Firebase Console to 'allow read, write: if true;'"))
             } else {
                 FlintLogger.e(tag, "Failed to save ContentAsset via REST HTTP ${response.status.value}: $responseText")
                 FlintResult.Error(AppError.Storage("Firestore REST error (${response.status.value}): $responseText"))

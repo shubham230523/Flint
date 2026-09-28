@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.shubhamthorat.flint.core.FlintBuildConfig
 import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.AuthRepository
 import com.shubhamthorat.flint.presentation.component.FlintButton
@@ -45,8 +46,8 @@ fun AuthScreen(
     modifier: Modifier = Modifier
 ) {
     var isSignUpMode by remember { mutableStateOf(false) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf(FlintBuildConfig.TEST_EMAIL) }
+    var password by remember { mutableStateOf(FlintBuildConfig.TEST_PASSWORD) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 

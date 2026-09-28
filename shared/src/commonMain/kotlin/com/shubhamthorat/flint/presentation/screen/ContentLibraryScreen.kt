@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.shubhamthorat.flint.domain.repository.CampaignRepository
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentStatus
@@ -42,12 +43,14 @@ import com.shubhamthorat.flint.presentation.component.FlintTextField
 import com.shubhamthorat.flint.presentation.navigation.FlintScreen
 import com.shubhamthorat.flint.presentation.navigation.NavigationManager
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 @Composable
 fun ContentLibraryScreen(
     navigationManager: NavigationManager,
     contentRepository: ContentRepository,
+    campaignRepository: CampaignRepository? = null,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -217,6 +220,22 @@ fun ContentLibraryScreen(
                 onSave = { updatedAsset ->
                     coroutineScope.launch {
                         contentRepository.saveContent(updatedAsset)
+                        if (campaignRepository != null) {
+                            val campaigns = campaignRepository.observeCampaigns().firstOrNull() ?: emptyList()
+                            campaigns.forEach { campaign ->
+                                if (campaign.items.any { it.id == updatedAsset.id || (it.type == updatedAsset.type && it.platform == updatedAsset.platform) }) {
+                                    val updatedItems = campaign.items.map { item ->
+                                        if (item.id == updatedAsset.id || (item.type == updatedAsset.type && item.platform == updatedAsset.platform)) {
+                                            updatedAsset
+                                        } else {
+                                            item
+                                        }
+                                    }
+                                    val updatedCampaign = campaign.copy(items = updatedItems)
+                                    campaignRepository.saveCampaign(updatedCampaign)
+                                }
+                            }
+                        }
                         selectedAssetForEdit = null
                     }
                 }
