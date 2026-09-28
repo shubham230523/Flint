@@ -65,7 +65,7 @@ class GenerateContentUseCase(
             ContentType.X_THREAD -> "X (Twitter)"
             ContentType.INSTAGRAM_CAPTION -> "Instagram"
             ContentType.CAROUSEL -> "Carousel"
-            ContentType.NEWSLETTER, ContentType.EMAIL -> "Email/Substack"
+            ContentType.NEWSLETTER, ContentType.EMAIL -> "Newsletter"
             ContentType.BLOG -> "Blog"
             ContentType.COMMUNITY_POST -> "Community"
         }

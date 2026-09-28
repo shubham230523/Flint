@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentStatus
+import com.shubhamthorat.flint.domain.repository.ContentType
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
@@ -58,12 +59,16 @@ fun ContentLibraryScreen(
 
     val filteredAssets = remember(assets, searchQuery, selectedFilter) {
         assets.filter { asset ->
-            val matchesQuery = searchQuery.isBlank() || asset.title.contains(searchQuery, ignoreCase = true) || asset.body.contains(searchQuery, ignoreCase = true)
+            val matchesQuery = searchQuery.isBlank() ||
+                    asset.title.contains(searchQuery, ignoreCase = true) ||
+                    asset.body.contains(searchQuery, ignoreCase = true)
+
             val matchesFilter = when (selectedFilter) {
                 "All" -> true
-                "Drafts" -> asset.status == ContentStatus.DRAFT
-                "Published" -> asset.status == ContentStatus.PUBLISHED
-                else -> asset.platform.contains(selectedFilter, ignoreCase = true)
+                else -> asset.platform.contains(selectedFilter, ignoreCase = true) ||
+                        selectedFilter.contains(asset.platform, ignoreCase = true) ||
+                        (selectedFilter.contains("X", ignoreCase = true) && asset.type == ContentType.X_THREAD) ||
+                        (selectedFilter.contains("Newsletter", ignoreCase = true) && (asset.type == ContentType.NEWSLETTER || asset.type == ContentType.EMAIL))
             }
             matchesQuery && matchesFilter
         }
@@ -99,7 +104,7 @@ fun ContentLibraryScreen(
             horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val filters = listOf("All", "Drafts", "Published", "LinkedIn", "X Thread", "Newsletter")
+            val filters = listOf("All", "LinkedIn", "X (Twitter)", "Newsletter", "YouTube", "Carousel")
             filters.forEach { filter ->
                 FlintChip(
                     selected = selectedFilter == filter,
@@ -122,7 +127,7 @@ fun ContentLibraryScreen(
                     verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
                 ) {
                     Text(
-                        text = "Your content library is empty.",
+                        text = if (assets.isEmpty()) "Your content library is empty." else "No content found for '$selectedFilter'.",
                         style = FlintTheme.typography.titleLarge,
                         color = FlintTheme.colors.primary,
                         fontWeight = FontWeight.Bold,
@@ -130,7 +135,7 @@ fun ContentLibraryScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "Generate your first campaign in the Spark workspace to populate your library.",
+                        text = if (assets.isEmpty()) "Generate your first campaign in the Spark workspace to populate your library." else "Try selecting 'All' or generating a new campaign for this category.",
                         style = FlintTheme.typography.bodyMedium,
                         color = FlintTheme.colors.textSecondary,
                         textAlign = TextAlign.Center,
@@ -228,6 +233,7 @@ private fun ContentEditModalDialog(
 ) {
     var editedTitle by remember(asset) { mutableStateOf(asset.title) }
     var editedBody by remember(asset) { mutableStateOf(asset.body) }
+    var editedStatus by remember(asset) { mutableStateOf(asset.status) }
     var isCopiedFeedbackVisible by remember { mutableStateOf(false) }
 
     val clipboardManager = LocalClipboardManager.current
@@ -259,6 +265,26 @@ private fun ContentEditModalDialog(
                         fontWeight = FontWeight.Bold
                     )
                     FlintChip(selected = true, onClick = {}, label = asset.platform)
+                }
+
+                // Status Toggle Chips
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Status:",
+                        style = FlintTheme.typography.titleMedium,
+                        color = FlintTheme.colors.onSurface
+                    )
+                    listOf(ContentStatus.DRAFT, ContentStatus.PUBLISHED, ContentStatus.SCHEDULED).forEach { status ->
+                        FlintChip(
+                            selected = editedStatus == status,
+                            onClick = { editedStatus = status },
+                            label = status.name
+                        )
+                    }
                 }
 
                 FlintTextField(
@@ -295,7 +321,7 @@ private fun ContentEditModalDialog(
 
                     FlintButton(
                         onClick = {
-                            val updated = asset.copy(title = editedTitle, body = editedBody)
+                            val updated = asset.copy(title = editedTitle, body = editedBody, status = editedStatus)
                             onSave(updated)
                         },
                         text = "💾 Save Changes",

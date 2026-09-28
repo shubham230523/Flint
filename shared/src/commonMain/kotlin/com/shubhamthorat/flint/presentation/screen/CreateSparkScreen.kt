@@ -133,7 +133,7 @@ fun CreateSparkScreen(
                 ) {
                     val channels = listOf(
                         ContentType.LINKEDIN_POST to "LinkedIn",
-                        ContentType.X_THREAD to "X Thread",
+                        ContentType.X_THREAD to "X (Twitter)",
                         ContentType.NEWSLETTER to "Newsletter",
                         ContentType.YOUTUBE_SCRIPT to "YouTube",
                         ContentType.CAROUSEL to "Carousel"
