@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import com.shubhamthorat.flint.core.FlintBuildConfig
 import com.shubhamthorat.flint.data.repository.FirebaseAuthRepository
 import com.shubhamthorat.flint.data.repository.FirestoreCampaignRepository
 import com.shubhamthorat.flint.data.repository.FirestoreContentRepository
@@ -63,12 +61,6 @@ fun App() {
     // Real Firebase Repositories (with fallback for Firestore if uninitialized)
     val authRepository: AuthRepository = remember { FirebaseAuthRepository() }
     val currentUser by authRepository.currentUserFlow.collectAsState(initial = null)
-
-    LaunchedEffect(Unit) {
-        if (currentUser == null && FlintBuildConfig.TEST_EMAIL.isNotBlank() && FlintBuildConfig.TEST_PASSWORD.isNotBlank()) {
-            authRepository.signInWithEmail(FlintBuildConfig.TEST_EMAIL, FlintBuildConfig.TEST_PASSWORD)
-        }
-    }
 
     val campaignRepository: CampaignRepository = remember {
         try {

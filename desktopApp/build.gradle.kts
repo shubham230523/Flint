@@ -20,8 +20,8 @@ compose.desktop {
         mainClass = "com.shubhamthorat.flint.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.shubhamthorat.flint"
+            targetFormats(TargetFormat.Exe, TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
+            packageName = "Flint"
             packageVersion = "1.0.0"
         }
     }
