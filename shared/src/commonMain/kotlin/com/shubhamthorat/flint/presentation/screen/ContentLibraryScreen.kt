@@ -2,8 +2,11 @@ package com.shubhamthorat.flint.presentation.screen
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.shubhamthorat.flint.domain.repository.CampaignRepository
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentRepository
@@ -257,11 +261,15 @@ private fun ContentEditModalDialog(
 
     val clipboardManager = LocalClipboardManager.current
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(FlintTheme.spacing.medium),
+                .fillMaxWidth(0.98f)
+                .widthIn(max = 640.dp)
+                .padding(FlintTheme.spacing.small),
             shape = RoundedCornerShape(FlintTheme.radius.large),
             colors = CardDefaults.cardColors(containerColor = FlintTheme.colors.surface)
         ) {
@@ -281,28 +289,36 @@ private fun ContentEditModalDialog(
                         text = "Edit Content Asset",
                         style = FlintTheme.typography.headlineMedium,
                         color = FlintTheme.colors.primary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     FlintChip(selected = true, onClick = {}, label = asset.platform)
                 }
 
-                // Status Toggle Chips
-                Row(
+                // Status Selection Section (Stacked vertically one below another)
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
                 ) {
                     Text(
-                        text = "Status:",
-                        style = FlintTheme.typography.titleMedium,
-                        color = FlintTheme.colors.onSurface
+                        text = "Status",
+                        style = FlintTheme.typography.labelSmall,
+                        color = FlintTheme.colors.textSecondary
                     )
-                    listOf(ContentStatus.DRAFT, ContentStatus.PUBLISHED, ContentStatus.SCHEDULED).forEach { status ->
-                        FlintChip(
-                            selected = editedStatus == status,
-                            onClick = { editedStatus = status },
-                            label = status.name
-                        )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                    ) {
+                        listOf(ContentStatus.DRAFT, ContentStatus.PUBLISHED, ContentStatus.SCHEDULED).forEach { status ->
+                            FlintChip(
+                                selected = editedStatus == status,
+                                onClick = { editedStatus = status },
+                                label = status.name,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
 
@@ -324,9 +340,10 @@ private fun ContentEditModalDialog(
                         .height(220.dp)
                 )
 
-                Row(
+                // Copy Text & Save Changes Buttons (Stacked vertically one below another)
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                    verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
                     FlintButton(
                         onClick = {
@@ -335,7 +352,7 @@ private fun ContentEditModalDialog(
                         },
                         text = if (isCopiedFeedbackVisible) "✓ Copied!" else "📋 Copy Text",
                         variant = FlintButtonVariant.OUTLINED,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     FlintButton(
@@ -345,7 +362,7 @@ private fun ContentEditModalDialog(
                         },
                         text = "💾 Save Changes",
                         variant = FlintButtonVariant.PRIMARY,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 

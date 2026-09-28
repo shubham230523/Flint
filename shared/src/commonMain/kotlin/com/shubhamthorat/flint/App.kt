@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import com.shubhamthorat.flint.core.FlintBuildConfig
 import com.shubhamthorat.flint.data.repository.FirebaseAuthRepository
@@ -120,18 +121,19 @@ fun App() {
                     .statusBarsPadding()
             ) {
                 // Top Brand Bar
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
                             horizontal = FlintTheme.spacing.medium,
                             vertical = FlintTheme.spacing.small
                         ),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "FLINT",
@@ -139,37 +141,38 @@ fun App() {
                             color = FlintTheme.colors.primary,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = currentUser?.let { "Signed in as ${it.email ?: "Creator"}" } ?: "One spark. Endless stories.",
-                            style = FlintTheme.typography.labelSmall,
-                            color = FlintTheme.colors.textSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (currentUser != null) {
-                            FlintButton(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        authRepository.signOut()
-                                    }
-                                },
-                                text = "Sign Out",
-                                variant = FlintButtonVariant.TEXT
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (currentUser != null) {
+                                FlintButton(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            authRepository.signOut()
+                                        }
+                                    },
+                                    text = "Sign Out",
+                                    variant = FlintButtonVariant.TEXT
+                                )
+                            }
+
+                            FlintChip(
+                                selected = isDarkTheme,
+                                onClick = { isDarkTheme = !isDarkTheme },
+                                label = if (isDarkTheme) "Dark" else "Light"
                             )
                         }
-
-                        FlintChip(
-                            selected = isDarkTheme,
-                            onClick = { isDarkTheme = !isDarkTheme },
-                            label = if (isDarkTheme) "Dark" else "Light"
-                        )
                     }
+
+                    Text(
+                        text = currentUser?.let { "Signed in as ${it.email ?: "Creator"}" } ?: "One spark. Endless stories.",
+                        style = FlintTheme.typography.labelSmall,
+                        color = FlintTheme.colors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
 
                 if (currentUser == null) {

@@ -129,7 +129,7 @@ fun FlintAppScaffold(
                                 Surface(
                                     onClick = { navigationManager.navigateTo(screen, clearBackstack = true) },
                                     shape = RoundedCornerShape(FlintTheme.radius.medium),
-                                    color = if (selected) FlintTheme.colors.surfaceVariant else Color.Transparent,
+                                    color = if (selected) FlintTheme.colors.primary.copy(alpha = 0.12f) else Color.Transparent,
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(44.dp)
