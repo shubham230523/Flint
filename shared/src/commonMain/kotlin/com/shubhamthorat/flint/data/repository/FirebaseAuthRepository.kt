@@ -59,7 +59,7 @@ private data class FirebaseAuthRestErrorDetail(
 )
 
 class FirebaseAuthRepository(
-    private val firebaseApiKey: String = "AIzaSyA1-Qbz91zcNKxQdAyqWIXsxb18dFh1yXQ",
+    private val firebaseApiKey: String = "AIzaSyD8HK_j6JqduOivNgtAFgdf5i4sqpB5Cxs",
     private val httpClient: HttpClient = createDefaultHttpClient()
 ) : AuthRepository {
 
