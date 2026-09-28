@@ -31,12 +31,6 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-val isDesktopOnly = providers.gradleProperty("flint.desktopOnly").orNull?.toBoolean() ?: false
-
 include(":desktopApp")
 include(":shared")
-
-if (!isDesktopOnly) {
-    include(":androidApp")
-    include(":webApp")
-}
+include(":androidApp")
