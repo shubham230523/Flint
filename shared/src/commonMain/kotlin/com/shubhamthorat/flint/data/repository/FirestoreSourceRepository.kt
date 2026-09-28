@@ -3,10 +3,10 @@ package com.shubhamthorat.flint.data.repository
 import com.shubhamthorat.flint.core.FlintLogger
 import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.FlintResult
+import com.shubhamthorat.flint.domain.repository.AuthRepository
 import com.shubhamthorat.flint.domain.repository.SourceItem
 import com.shubhamthorat.flint.domain.repository.SourceRepository
 import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -15,23 +15,28 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class FirestoreSourceRepository : SourceRepository {
+class FirestoreSourceRepository(
+    private val authRepository: AuthRepository = FirebaseAuthRepository()
+) : SourceRepository {
 
     private val tag = "FirestoreSourceRepository"
     private val firestore = Firebase.firestore
-    private val auth = Firebase.auth
 
-    private val userSourcesCollection
-        get() = auth.currentUser?.uid?.let { uid ->
+    private suspend fun getUserSourcesCollection(): dev.gitlive.firebase.firestore.CollectionReference? {
+        val uid = authRepository.getCurrentUser()?.id
+        return if (!uid.isNullOrBlank()) {
             firestore.collection("users").document(uid).collection("sources")
+        } else {
+            null
         }
+    }
 
     override fun observeSources(): Flow<List<SourceItem>> {
-        return auth.authStateChanged.flatMapLatest { fbUser ->
-            if (fbUser == null) {
+        return authRepository.currentUserFlow.flatMapLatest { user ->
+            if (user == null) {
                 flowOf(emptyList())
             } else {
-                firestore.collection("users").document(fbUser.uid).collection("sources")
+                firestore.collection("users").document(user.id).collection("sources")
                     .snapshots
                     .map { querySnapshot ->
                         querySnapshot.documents.mapNotNull { doc ->
@@ -48,7 +53,7 @@ class FirestoreSourceRepository : SourceRepository {
     }
 
     override suspend fun getSourceById(id: String): FlintResult<SourceItem, AppError> {
-        val col = userSourcesCollection
+        val col = getUserSourcesCollection()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to access sources."))
 
         return try {
@@ -66,7 +71,7 @@ class FirestoreSourceRepository : SourceRepository {
     }
 
     override suspend fun addSource(source: SourceItem): FlintResult<SourceItem, AppError> {
-        val col = userSourcesCollection
+        val col = getUserSourcesCollection()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to save sources."))
 
         return try {
@@ -80,7 +85,7 @@ class FirestoreSourceRepository : SourceRepository {
     }
 
     override suspend fun deleteSource(id: String): FlintResult<Unit, AppError> {
-        val col = userSourcesCollection
+        val col = getUserSourcesCollection()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to delete sources."))
 
         return try {

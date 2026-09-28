@@ -64,7 +64,7 @@ fun App() {
 
     val campaignRepository: CampaignRepository = remember {
         try {
-            FirestoreCampaignRepository()
+            FirestoreCampaignRepository(authRepository)
         } catch (_: Throwable) {
             InMemoryCampaignRepository()
         }
@@ -72,7 +72,7 @@ fun App() {
 
     val contentRepository: ContentRepository = remember {
         try {
-            FirestoreContentRepository()
+            FirestoreContentRepository(authRepository)
         } catch (_: Throwable) {
             InMemoryContentRepository()
         }
@@ -80,7 +80,7 @@ fun App() {
 
     val sourceRepository: SourceRepository = remember {
         try {
-            FirestoreSourceRepository()
+            FirestoreSourceRepository(authRepository)
         } catch (_: Throwable) {
             InMemorySourceRepository()
         }
@@ -88,7 +88,7 @@ fun App() {
 
     val creatorDnaRepository: CreatorDnaRepository = remember {
         try {
-            FirestoreCreatorDnaRepository()
+            FirestoreCreatorDnaRepository(authRepository)
         } catch (_: Throwable) {
             InMemoryCreatorDnaRepository()
         }

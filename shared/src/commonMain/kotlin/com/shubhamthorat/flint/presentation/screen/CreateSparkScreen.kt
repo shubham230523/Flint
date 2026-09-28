@@ -196,7 +196,10 @@ fun CreateSparkScreen(
                             is FlintResult.Success -> {
                                 val campaign = result.data
                                 generatedCampaign = campaign
-                                campaignRepository.saveCampaign(campaign)
+                                val saveCampaignResult = campaignRepository.saveCampaign(campaign)
+                                if (saveCampaignResult is FlintResult.Error) {
+                                    errorMessage = "Firestore storage notice: ${saveCampaignResult.error.message}"
+                                }
                                 campaign.items.forEach { asset ->
                                     contentRepository.saveContent(asset)
                                 }

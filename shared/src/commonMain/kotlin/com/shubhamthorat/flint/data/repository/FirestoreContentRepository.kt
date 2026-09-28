@@ -3,10 +3,10 @@ package com.shubhamthorat.flint.data.repository
 import com.shubhamthorat.flint.core.FlintLogger
 import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.FlintResult
+import com.shubhamthorat.flint.domain.repository.AuthRepository
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentRepository
 import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -15,23 +15,28 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class FirestoreContentRepository : ContentRepository {
+class FirestoreContentRepository(
+    private val authRepository: AuthRepository = FirebaseAuthRepository()
+) : ContentRepository {
 
     private val tag = "FirestoreContentRepository"
     private val firestore = Firebase.firestore
-    private val auth = Firebase.auth
 
-    private val userContentCollection
-        get() = auth.currentUser?.uid?.let { uid ->
+    private suspend fun getUserContentCollection(): dev.gitlive.firebase.firestore.CollectionReference? {
+        val uid = authRepository.getCurrentUser()?.id
+        return if (!uid.isNullOrBlank()) {
             firestore.collection("users").document(uid).collection("content")
+        } else {
+            null
         }
+    }
 
     override fun observeContentAssets(): Flow<List<ContentAsset>> {
-        return auth.authStateChanged.flatMapLatest { fbUser ->
-            if (fbUser == null) {
+        return authRepository.currentUserFlow.flatMapLatest { user ->
+            if (user == null) {
                 flowOf(emptyList())
             } else {
-                firestore.collection("users").document(fbUser.uid).collection("content")
+                firestore.collection("users").document(user.id).collection("content")
                     .snapshots
                     .map { querySnapshot ->
                         querySnapshot.documents.mapNotNull { doc ->
@@ -48,7 +53,7 @@ class FirestoreContentRepository : ContentRepository {
     }
 
     override suspend fun getContentById(id: String): FlintResult<ContentAsset, AppError> {
-        val col = userContentCollection
+        val col = getUserContentCollection()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to access content."))
 
         return try {
@@ -66,7 +71,7 @@ class FirestoreContentRepository : ContentRepository {
     }
 
     override suspend fun saveContent(asset: ContentAsset): FlintResult<ContentAsset, AppError> {
-        val col = userContentCollection
+        val col = getUserContentCollection()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to save content."))
 
         return try {
@@ -80,7 +85,7 @@ class FirestoreContentRepository : ContentRepository {
     }
 
     override suspend fun deleteContent(id: String): FlintResult<Unit, AppError> {
-        val col = userContentCollection
+        val col = getUserContentCollection()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to delete content."))
 
         return try {

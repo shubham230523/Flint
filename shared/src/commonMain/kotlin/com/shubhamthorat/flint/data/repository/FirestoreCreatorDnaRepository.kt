@@ -4,9 +4,9 @@ import com.shubhamthorat.flint.core.FlintLogger
 import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.CreatorProfile
 import com.shubhamthorat.flint.domain.model.FlintResult
+import com.shubhamthorat.flint.domain.repository.AuthRepository
 import com.shubhamthorat.flint.domain.repository.CreatorDnaRepository
 import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -15,23 +15,28 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class FirestoreCreatorDnaRepository : CreatorDnaRepository {
+class FirestoreCreatorDnaRepository(
+    private val authRepository: AuthRepository = FirebaseAuthRepository()
+) : CreatorDnaRepository {
 
     private val tag = "FirestoreCreatorDnaRepository"
     private val firestore = Firebase.firestore
-    private val auth = Firebase.auth
 
-    private val userProfileDocument
-        get() = auth.currentUser?.uid?.let { uid ->
+    private suspend fun getUserProfileDocument(): dev.gitlive.firebase.firestore.DocumentReference? {
+        val uid = authRepository.getCurrentUser()?.id
+        return if (!uid.isNullOrBlank()) {
             firestore.collection("users").document(uid).collection("creator_dna").document("profile")
+        } else {
+            null
         }
+    }
 
     override fun observeProfile(): Flow<CreatorProfile?> {
-        return auth.authStateChanged.flatMapLatest { fbUser ->
-            if (fbUser == null) {
+        return authRepository.currentUserFlow.flatMapLatest { user ->
+            if (user == null) {
                 flowOf(null)
             } else {
-                firestore.collection("users").document(fbUser.uid).collection("creator_dna").document("profile")
+                firestore.collection("users").document(user.id).collection("creator_dna").document("profile")
                     .snapshots
                     .map { docSnapshot ->
                         if (docSnapshot.exists) {
@@ -39,10 +44,10 @@ class FirestoreCreatorDnaRepository : CreatorDnaRepository {
                                 docSnapshot.data<CreatorProfile>()
                             } catch (e: Exception) {
                                 FlintLogger.w(tag, "Failed to parse CreatorProfile doc: ${e.message}")
-                                CreatorProfile(userId = fbUser.uid, handle = fbUser.email ?: "@creator")
+                                CreatorProfile(userId = user.id, handle = user.email ?: "@creator")
                             }
                         } else {
-                            CreatorProfile(userId = fbUser.uid, handle = fbUser.email ?: "@creator")
+                            CreatorProfile(userId = user.id, handle = user.email ?: "@creator")
                         }
                     }
             }
@@ -50,7 +55,7 @@ class FirestoreCreatorDnaRepository : CreatorDnaRepository {
     }
 
     override suspend fun getProfile(): FlintResult<CreatorProfile, AppError> {
-        val docRef = userProfileDocument
+        val docRef = getUserProfileDocument()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to access Creator DNA profile."))
 
         return try {
@@ -59,9 +64,10 @@ class FirestoreCreatorDnaRepository : CreatorDnaRepository {
                 val profile = doc.data<CreatorProfile>()
                 FlintResult.Success(profile)
             } else {
+                val user = authRepository.getCurrentUser()
                 val defaultProfile = CreatorProfile(
-                    userId = auth.currentUser?.uid ?: "user_default",
-                    handle = auth.currentUser?.email ?: "@creator"
+                    userId = user?.id ?: "user_default",
+                    handle = user?.email ?: "@creator"
                 )
                 FlintResult.Success(defaultProfile)
             }
@@ -72,7 +78,7 @@ class FirestoreCreatorDnaRepository : CreatorDnaRepository {
     }
 
     override suspend fun updateProfile(profile: CreatorProfile): FlintResult<CreatorProfile, AppError> {
-        val docRef = userProfileDocument
+        val docRef = getUserProfileDocument()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to update Creator DNA profile."))
 
         return try {
