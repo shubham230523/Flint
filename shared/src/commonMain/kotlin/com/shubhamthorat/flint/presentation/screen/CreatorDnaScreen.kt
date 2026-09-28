@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.shubhamthorat.flint.domain.model.CreatorDNA
 import com.shubhamthorat.flint.domain.model.CreatorProfile
+import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.CreatorDnaRepository
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
@@ -34,10 +36,32 @@ fun CreatorDnaScreen(
     creatorDnaRepository: CreatorDnaRepository,
     modifier: Modifier = Modifier
 ) {
-    val activeProfile by creatorDnaRepository.observeProfile().collectAsState(initial = CreatorProfile("user_default", "@creator"))
-    var dnaState by remember(activeProfile) { mutableStateOf(activeProfile?.dna ?: CreatorDNA()) }
+    val activeProfileState = creatorDnaRepository.observeProfile().collectAsState(initial = null)
+    val activeProfile = activeProfileState.value
+
+    var dnaState by remember { mutableStateOf(CreatorDNA()) }
+    var hasInitialPreFillDone by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var isSavedMessageVisible by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(activeProfile) {
+        if (!hasInitialPreFillDone && activeProfile?.dna != null) {
+            val saved = activeProfile.dna
+            if (saved.preferredTone.isNotBlank() || saved.writingStyle.isNotBlank() || saved.targetAudience.isNotBlank() || saved.niche.isNotBlank()) {
+                dnaState = saved
+                hasInitialPreFillDone = true
+            }
+        }
+    }
+
+    val savedDna = activeProfile?.dna
+    val hasSavedDna = savedDna != null && (
+        savedDna.preferredTone.isNotBlank() ||
+        savedDna.writingStyle.isNotBlank() ||
+        savedDna.targetAudience.isNotBlank() ||
+        savedDna.niche.isNotBlank()
+    )
 
     Column(
         modifier = modifier
@@ -68,21 +92,34 @@ fun CreatorDnaScreen(
                 modifier = Modifier.padding(FlintTheme.spacing.medium),
                 verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
             ) {
-                Text(
-                    text = "🧬 Active DNA Profile (${activeProfile?.handle ?: "@creator"})",
-                    style = FlintTheme.typography.titleLarge,
-                    color = FlintTheme.colors.primary
-                )
-                Text(
-                    text = "Tone: ${dnaState.preferredTone} | Style: ${dnaState.writingStyle} | Audience: ${dnaState.targetAudience}",
-                    style = FlintTheme.typography.bodyMedium,
-                    color = FlintTheme.colors.onSurface
-                )
-                Text(
-                    text = "Niche: ${dnaState.niche} | CTA: ${dnaState.ctaStyle} | Humor Level: ${dnaState.humorLevel}/5",
-                    style = FlintTheme.typography.bodyMedium,
-                    color = FlintTheme.colors.textSecondary
-                )
+                if (hasSavedDna) {
+                    Text(
+                        text = "🧬 Active DNA Profile (${activeProfile.handle})",
+                        style = FlintTheme.typography.titleLarge,
+                        color = FlintTheme.colors.primary
+                    )
+                    Text(
+                        text = "Tone: ${savedDna.preferredTone.ifBlank { "Not set" }} | Style: ${savedDna.writingStyle.ifBlank { "Not set" }} | Audience: ${savedDna.targetAudience.ifBlank { "Not set" }}",
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.onSurface
+                    )
+                    Text(
+                        text = "Niche: ${savedDna.niche.ifBlank { "Not set" }} | CTA: ${savedDna.ctaStyle.ifBlank { "Not set" }} | Humor Level: ${savedDna.humorLevel}/5",
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.textSecondary
+                    )
+                } else {
+                    Text(
+                        text = "🧬 No Active DNA Profile Saved",
+                        style = FlintTheme.typography.titleLarge,
+                        color = FlintTheme.colors.primary
+                    )
+                    Text(
+                        text = "Fill in your brand voice controls below and click 'Save Creator DNA' to teach Flint AI your personal tone and style.",
+                        style = FlintTheme.typography.bodyMedium,
+                        color = FlintTheme.colors.textSecondary
+                    )
+                }
             }
         }
 
@@ -98,28 +135,28 @@ fun CreatorDnaScreen(
                     value = dnaState.preferredTone,
                     onValueChange = { dnaState = dnaState.copy(preferredTone = it) },
                     label = "Preferred Tone",
-                    placeholder = "Conversational, Authoritative, Witty..."
+                    placeholder = "e.g., Conversational, Authoritative, Punchy, Witty..."
                 )
 
                 FlintTextField(
                     value = dnaState.writingStyle,
                     onValueChange = { dnaState = dnaState.copy(writingStyle = it) },
                     label = "Writing Style",
-                    placeholder = "Story-driven, Data-backed, Punchy..."
+                    placeholder = "e.g., Story-driven, Data-backed, Direct & Minimalist..."
                 )
 
                 FlintTextField(
                     value = dnaState.targetAudience,
                     onValueChange = { dnaState = dnaState.copy(targetAudience = it) },
                     label = "Target Audience",
-                    placeholder = "Software Engineers, Tech Creators..."
+                    placeholder = "e.g., Software Engineers, Founders, Marketers..."
                 )
 
                 FlintTextField(
                     value = dnaState.niche,
                     onValueChange = { dnaState = dnaState.copy(niche = it) },
                     label = "Content Niche",
-                    placeholder = "Kotlin Multiplatform, AI Operating Systems..."
+                    placeholder = "e.g., Kotlin Multiplatform, AI Tools, SaaS..."
                 )
 
                 Text(text = "Humor Level", style = FlintTheme.typography.titleMedium)
@@ -141,9 +178,17 @@ fun CreatorDnaScreen(
         FlintButton(
             onClick = {
                 coroutineScope.launch {
-                    val updated = (activeProfile ?: CreatorProfile("user_default", "@creator")).copy(dna = dnaState)
-                    creatorDnaRepository.updateProfile(updated)
-                    isSavedMessageVisible = true
+                    errorMessage = null
+                    isSavedMessageVisible = false
+                    val currentProfile = activeProfile ?: CreatorProfile("user_default", "@creator")
+                    val updated = currentProfile.copy(dna = dnaState)
+                    val result = creatorDnaRepository.updateProfile(updated)
+                    if (result is FlintResult.Success) {
+                        isSavedMessageVisible = true
+                        dnaState = CreatorDNA() // Form gets empty again upon submitting!
+                    } else if (result is FlintResult.Error) {
+                        errorMessage = result.error.message
+                    }
                 }
             },
             text = "Save Creator DNA",
@@ -151,10 +196,21 @@ fun CreatorDnaScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        errorMessage?.let { err ->
+            FlintCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = err,
+                    style = FlintTheme.typography.bodyMedium,
+                    color = com.shubhamthorat.flint.presentation.theme.FlintColorTokens.Error,
+                    modifier = Modifier.padding(FlintTheme.spacing.medium)
+                )
+            }
+        }
+
         if (isSavedMessageVisible) {
             FlintCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "✓ Creator DNA successfully saved! Future AI generations will apply these voice tokens.",
+                    text = "✓ Creator DNA successfully saved to Cloud Firestore! Future AI generations will apply these voice tokens.",
                     style = FlintTheme.typography.bodyMedium,
                     color = FlintTheme.colors.primary,
                     modifier = Modifier.padding(FlintTheme.spacing.medium)

@@ -177,7 +177,8 @@ fun App() {
                             FlintScreen.Create -> CreateSparkScreen(
                                 navigationManager = navigationManager,
                                 campaignRepository = campaignRepository,
-                                contentRepository = contentRepository
+                                contentRepository = contentRepository,
+                                creatorDnaRepository = creatorDnaRepository
                             )
                             FlintScreen.ContentLibrary -> ContentLibraryScreen(
                                 navigationManager = navigationManager,

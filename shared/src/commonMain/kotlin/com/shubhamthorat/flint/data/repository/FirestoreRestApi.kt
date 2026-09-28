@@ -3,6 +3,8 @@ package com.shubhamthorat.flint.data.repository
 import com.shubhamthorat.flint.core.FlintLogger
 import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.Campaign
+import com.shubhamthorat.flint.domain.model.CreatorDNA
+import com.shubhamthorat.flint.domain.model.CreatorProfile
 import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentStatus
@@ -163,6 +165,74 @@ class FirestoreRestApi(
         }
     }
 
+    suspend fun saveProfile(userId: String, profile: CreatorProfile, idToken: String? = null): FlintResult<CreatorProfile, AppError> {
+        val updateMask = "updateMask.fieldPaths=userId&updateMask.fieldPaths=handle&updateMask.fieldPaths=bio&updateMask.fieldPaths=dna"
+        val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/creator_dna/profile?key=$apiKey&$updateMask"
+        return try {
+            val bodyJson = buildJsonObject {
+                put("fields", buildJsonObject {
+                    put("userId", stringValue(profile.userId))
+                    put("handle", stringValue(profile.handle))
+                    put("bio", stringValue(profile.bio))
+                    put("dna", buildJsonObject {
+                        put("mapValue", buildJsonObject {
+                            put("fields", buildJsonObject {
+                                put("preferredTone", stringValue(profile.dna.preferredTone))
+                                put("writingStyle", stringValue(profile.dna.writingStyle))
+                                put("targetAudience", stringValue(profile.dna.targetAudience))
+                                put("niche", stringValue(profile.dna.niche))
+                                put("technicalDepth", stringValue(profile.dna.technicalDepth))
+                                put("ctaStyle", stringValue(profile.dna.ctaStyle))
+                                put("humorLevel", intValue(profile.dna.humorLevel.toLong()))
+                                put("preferredContentLength", stringValue(profile.dna.preferredContentLength))
+                            })
+                        })
+                    })
+                })
+            }
+
+            val response = httpClient.patch(url) {
+                contentType(KtorContentType.Application.Json)
+                if (!idToken.isNullOrBlank()) {
+                    header("Authorization", "Bearer $idToken")
+                }
+                setBody(bodyJson.toString())
+            }
+
+            val responseText = response.bodyAsText()
+            if (response.status.isSuccess()) {
+                FlintLogger.i(tag, "Successfully saved CreatorProfile to Firestore via REST")
+                FlintResult.Success(profile)
+            } else {
+                FlintLogger.e(tag, "Failed to save CreatorProfile via REST HTTP ${response.status.value}: $responseText")
+                FlintResult.Error(AppError.Storage("Firestore REST error (${response.status.value}): $responseText"))
+            }
+        } catch (e: Exception) {
+            FlintLogger.e(tag, "Exception saving CreatorProfile via REST: ${e.message}")
+            FlintResult.Error(AppError.Storage("Firestore REST error: ${e.message}"))
+        }
+    }
+
+    suspend fun fetchProfile(userId: String, idToken: String? = null): CreatorProfile? {
+        val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/creator_dna/profile?key=$apiKey"
+        return try {
+            val response = httpClient.get(url) {
+                if (!idToken.isNullOrBlank()) {
+                    header("Authorization", "Bearer $idToken")
+                }
+            }
+            if (!response.status.isSuccess()) return null
+            val text = response.bodyAsText()
+            val json = jsonParser.parseToJsonElement(text).jsonObject
+            val fields = json["fields"]?.jsonObject ?: return null
+
+            parseCreatorProfileFromFields(fields)
+        } catch (e: Exception) {
+            FlintLogger.w(tag, "Failed to fetch CreatorProfile via REST: ${e.message}")
+            null
+        }
+    }
+
     private fun buildContentAssetFields(asset: ContentAsset): JsonObject {
         return buildJsonObject {
             put("id", stringValue(asset.id))
@@ -220,6 +290,35 @@ class FirestoreRestApi(
             status = status,
             platform = platform,
             createdAtTimestamp = createdAtTimestamp
+        )
+    }
+
+    private fun parseCreatorProfileFromFields(fields: JsonObject): CreatorProfile? {
+        val userId = getString(fields, "userId") ?: return null
+        val handle = getString(fields, "handle") ?: "@creator"
+        val bio = getString(fields, "bio") ?: ""
+
+        val dnaFields = fields["dna"]?.jsonObject?.get("mapValue")?.jsonObject?.get("fields")?.jsonObject
+        val dna = if (dnaFields != null) {
+            CreatorDNA(
+                preferredTone = getString(dnaFields, "preferredTone") ?: "",
+                writingStyle = getString(dnaFields, "writingStyle") ?: "",
+                targetAudience = getString(dnaFields, "targetAudience") ?: "",
+                niche = getString(dnaFields, "niche") ?: "",
+                technicalDepth = getString(dnaFields, "technicalDepth") ?: "",
+                ctaStyle = getString(dnaFields, "ctaStyle") ?: "",
+                humorLevel = getLong(dnaFields, "humorLevel")?.toInt() ?: 1,
+                preferredContentLength = getString(dnaFields, "preferredContentLength") ?: ""
+            )
+        } else {
+            CreatorDNA()
+        }
+
+        return CreatorProfile(
+            userId = userId,
+            handle = handle,
+            bio = bio,
+            dna = dna
         )
     }
 

@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.collectAsState
 import com.shubhamthorat.flint.domain.ai.AiTaskRouter
 import com.shubhamthorat.flint.domain.ai.GeminiProvider
 import com.shubhamthorat.flint.domain.ai.OllamaCloudProvider
@@ -34,6 +35,7 @@ import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.CampaignRepository
 import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentType
+import com.shubhamthorat.flint.domain.repository.CreatorDnaRepository
 import com.shubhamthorat.flint.domain.usecase.CreateSparkCampaignUseCase
 import com.shubhamthorat.flint.domain.usecase.GenerateContentUseCase
 import com.shubhamthorat.flint.presentation.component.FlintButton
@@ -52,10 +54,15 @@ fun CreateSparkScreen(
     navigationManager: NavigationManager,
     campaignRepository: CampaignRepository,
     contentRepository: ContentRepository,
+    creatorDnaRepository: CreatorDnaRepository? = null,
     modifier: Modifier = Modifier
 ) {
+    val activeProfileState = creatorDnaRepository?.observeProfile()?.collectAsState(initial = null)
+    val activeProfile = activeProfileState?.value
+
+    val savedTone = activeProfile?.dna?.preferredTone?.takeIf { it.isNotBlank() } ?: "Conversational"
+    var selectedTone by remember(savedTone) { mutableStateOf(savedTone) }
     var sourceText by remember { mutableStateOf("") }
-    var selectedTone by remember { mutableStateOf("Conversational") }
     var isGenerating by remember { mutableStateOf(false) }
     var generatedCampaign by remember { mutableStateOf<Campaign?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -171,8 +178,14 @@ fun CreateSparkScreen(
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
-                    val tones = listOf("Conversational", "Punchy", "Authoritative", "Storytelling")
-                    tones.forEach { tone ->
+                    val defaultTones = listOf("Conversational", "Punchy", "Authoritative", "Storytelling", "Witty")
+                    val availableTones = if (savedTone !in defaultTones && savedTone.isNotBlank()) {
+                        defaultTones + savedTone
+                    } else {
+                        defaultTones
+                    }
+
+                    availableTones.forEach { tone ->
                         FlintChip(
                             selected = selectedTone == tone,
                             onClick = { selectedTone = tone },
@@ -191,7 +204,8 @@ fun CreateSparkScreen(
                     errorMessage = null
                     generatedCampaign = null
                     coroutineScope.launch {
-                        val dna = CreatorDNA(preferredTone = selectedTone)
+                        val baseDna = activeProfile?.dna ?: CreatorDNA()
+                        val dna = baseDna.copy(preferredTone = selectedTone)
                         when (val result = campaignUseCase.execute(sourceText, selectedTypes.toList(), dna)) {
                             is FlintResult.Success -> {
                                 val campaign = result.data

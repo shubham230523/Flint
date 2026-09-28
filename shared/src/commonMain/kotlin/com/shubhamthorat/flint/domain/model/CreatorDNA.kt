@@ -8,16 +8,16 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CreatorDNA(
-    val preferredTone: String = "Conversational",
-    val writingStyle: String = "Story-driven",
-    val targetAudience: String = "Tech Creators & Developers",
-    val niche: String = "Software & AI Tools",
-    val technicalDepth: String = "Intermediate",
-    val preferredHooks: List<String> = listOf("Question", "Bold Statement", "Story Hook"),
-    val ctaStyle: String = "Soft value-add",
-    val humorLevel: Int = 3,
-    val preferredContentLength: String = "Medium",
-    val languages: List<String> = listOf("English")
+    val preferredTone: String = "",
+    val writingStyle: String = "",
+    val targetAudience: String = "",
+    val niche: String = "",
+    val technicalDepth: String = "",
+    val preferredHooks: List<String> = emptyList(),
+    val ctaStyle: String = "",
+    val humorLevel: Int = 1,
+    val preferredContentLength: String = "",
+    val languages: List<String> = emptyList()
 )
 
 @Serializable

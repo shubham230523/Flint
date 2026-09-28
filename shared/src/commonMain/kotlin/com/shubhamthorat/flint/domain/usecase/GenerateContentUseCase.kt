@@ -44,13 +44,21 @@ class GenerateContentUseCase(
     }
 
     private fun buildPrompt(sourceText: String, targetType: ContentType, dna: CreatorDNA): String {
+        val toneStr = dna.preferredTone.ifBlank { "Conversational" }
+        val styleStr = dna.writingStyle.ifBlank { "Engaging & Direct" }
+        val audienceStr = dna.targetAudience.ifBlank { "General Audience" }
+        val nicheStr = dna.niche.ifBlank { "General" }
+        val ctaStr = dna.ctaStyle.ifBlank { "Soft value-add" }
+
         return """
             Role: Expert Content Creator
             Target Output: ${targetType.name}
-            Tone: ${dna.preferredTone}
-            Style: ${dna.writingStyle}
-            Audience: ${dna.targetAudience}
-            CTA Style: ${dna.ctaStyle}
+            Tone: $toneStr
+            Style: $styleStr
+            Audience: $audienceStr
+            Niche: $nicheStr
+            Humor Level: ${dna.humorLevel}/5
+            CTA Style: $ctaStr
             
             Instruction: Provide ONLY the final generated content. Do not include any internal thinking process, analysis, or introductory preamble.
             
