@@ -39,7 +39,8 @@ class FirestoreCampaignRepository(
                             }.collect { emit(it) }
                     } catch (e: Throwable) {
                         FlintLogger.w(tag, "Native Firestore observe failed (${e.message}). Falling back to REST API...")
-                        val campaigns = restApi.fetchCampaigns(user.id)
+                        val idToken = authRepository.getIdToken()
+                        val campaigns = restApi.fetchCampaigns(user.id, idToken)
                         emit(campaigns)
                     }
                 }
@@ -50,6 +51,7 @@ class FirestoreCampaignRepository(
     override suspend fun saveCampaign(campaign: Campaign): FlintResult<Campaign, AppError> {
         val user = authRepository.getCurrentUser()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to save campaigns."))
+        val idToken = authRepository.getIdToken()
 
         try {
             val col = Firebase.firestore.collection("users").document(user.id).collection("campaigns")
@@ -60,7 +62,7 @@ class FirestoreCampaignRepository(
             FlintLogger.w(tag, "Native Firestore save failed (${e.message}). Falling back to Firestore REST API...")
         }
 
-        return restApi.saveCampaign(user.id, campaign)
+        return restApi.saveCampaign(user.id, campaign, idToken)
     }
 
     override suspend fun deleteCampaign(id: String): FlintResult<Unit, AppError> {

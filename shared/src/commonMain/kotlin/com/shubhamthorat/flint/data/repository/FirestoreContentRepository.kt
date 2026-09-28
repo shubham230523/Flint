@@ -39,7 +39,8 @@ class FirestoreContentRepository(
                             }.collect { emit(it) }
                     } catch (e: Throwable) {
                         FlintLogger.w(tag, "Native Firestore observe content failed (${e.message}). Falling back to REST API...")
-                        val assets = restApi.fetchContentAssets(user.id)
+                        val idToken = authRepository.getIdToken()
+                        val assets = restApi.fetchContentAssets(user.id, idToken)
                         emit(assets)
                     }
                 }
@@ -50,8 +51,9 @@ class FirestoreContentRepository(
     override suspend fun getContentById(id: String): FlintResult<ContentAsset, AppError> {
         val user = authRepository.getCurrentUser()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to access content."))
+        val idToken = authRepository.getIdToken()
 
-        val allAssets = restApi.fetchContentAssets(user.id)
+        val allAssets = restApi.fetchContentAssets(user.id, idToken)
         val asset = allAssets.firstOrNull { it.id == id }
             ?: return FlintResult.Error(AppError.Validation("Content asset $id not found"))
 
@@ -61,6 +63,7 @@ class FirestoreContentRepository(
     override suspend fun saveContent(asset: ContentAsset): FlintResult<ContentAsset, AppError> {
         val user = authRepository.getCurrentUser()
             ?: return FlintResult.Error(AppError.Auth("User must be signed in to save content."))
+        val idToken = authRepository.getIdToken()
 
         try {
             val col = Firebase.firestore.collection("users").document(user.id).collection("content")
@@ -71,7 +74,7 @@ class FirestoreContentRepository(
             FlintLogger.w(tag, "Native Firestore save content failed (${e.message}). Falling back to Firestore REST API...")
         }
 
-        return restApi.saveContent(user.id, asset)
+        return restApi.saveContent(user.id, asset, idToken)
     }
 
     override suspend fun deleteContent(id: String): FlintResult<Unit, AppError> {

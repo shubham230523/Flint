@@ -174,7 +174,8 @@ class FirebaseAuthRepository(
                 id = userId,
                 email = res.email,
                 displayName = res.email?.substringBefore('@') ?: "Creator",
-                photoUrl = null
+                photoUrl = null,
+                idToken = res.idToken
             )
 
             restUserFlow.value = user
@@ -242,7 +243,8 @@ class FirebaseAuthRepository(
                 id = userId,
                 email = res.email ?: email,
                 displayName = (res.email ?: email).substringBefore('@'),
-                photoUrl = null
+                photoUrl = null,
+                idToken = res.idToken
             )
 
             restUserFlow.value = user
@@ -252,6 +254,14 @@ class FirebaseAuthRepository(
             FlintLogger.e(tag, "Firebase REST $actionName Exception: ${e.message}")
             FlintResult.Error(AppError.Auth("Firebase $actionName failed: ${e.message ?: "Network error"}"))
         }
+    }
+
+    override suspend fun getIdToken(): String? {
+        return try {
+            Firebase.auth.currentUser?.getIdToken(false)
+        } catch (_: Throwable) {
+            restUserFlow.value?.idToken
+        } ?: restUserFlow.value?.idToken
     }
 
     private fun parseRestErrorMessage(jsonText: String): String? {

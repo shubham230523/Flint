@@ -9,12 +9,14 @@ data class FlintUser(
     val email: String?,
     val displayName: String?,
     val photoUrl: String?,
-    val isAnonymous: Boolean = false
+    val isAnonymous: Boolean = false,
+    val idToken: String? = null
 )
 
 interface AuthRepository {
     val currentUserFlow: Flow<FlintUser?>
     suspend fun getCurrentUser(): FlintUser?
+    suspend fun getIdToken(): String? = null
     suspend fun signInWithEmail(email: String, password: String): FlintResult<FlintUser, AppError>
     suspend fun signUpWithEmail(email: String, password: String): FlintResult<FlintUser, AppError>
     suspend fun signOut(): FlintResult<Unit, AppError>

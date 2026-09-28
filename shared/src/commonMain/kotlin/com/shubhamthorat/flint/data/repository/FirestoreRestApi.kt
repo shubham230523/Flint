@@ -10,6 +10,7 @@ import com.shubhamthorat.flint.domain.repository.ContentType
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.patch
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -33,7 +34,7 @@ class FirestoreRestApi(
 ) {
     private val tag = "FirestoreRestApi"
 
-    suspend fun saveCampaign(userId: String, campaign: Campaign): FlintResult<Campaign, AppError> {
+    suspend fun saveCampaign(userId: String, campaign: Campaign, idToken: String? = null): FlintResult<Campaign, AppError> {
         val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/campaigns/${campaign.id}?key=$apiKey"
         return try {
             val bodyJson = buildJsonObject {
@@ -60,6 +61,9 @@ class FirestoreRestApi(
 
             val response = httpClient.patch(url) {
                 contentType(KtorContentType.Application.Json)
+                if (!idToken.isNullOrBlank()) {
+                    header("Authorization", "Bearer $idToken")
+                }
                 setBody(bodyJson.toString())
             }
 
@@ -77,10 +81,14 @@ class FirestoreRestApi(
         }
     }
 
-    suspend fun fetchCampaigns(userId: String): List<Campaign> {
+    suspend fun fetchCampaigns(userId: String, idToken: String? = null): List<Campaign> {
         val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/campaigns?key=$apiKey"
         return try {
-            val response = httpClient.get(url)
+            val response = httpClient.get(url) {
+                if (!idToken.isNullOrBlank()) {
+                    header("Authorization", "Bearer $idToken")
+                }
+            }
             if (!response.status.isSuccess()) return emptyList()
             val text = response.bodyAsText()
             val json = jsonParser.parseToJsonElement(text).jsonObject
@@ -95,7 +103,7 @@ class FirestoreRestApi(
         }
     }
 
-    suspend fun saveContent(userId: String, asset: ContentAsset): FlintResult<ContentAsset, AppError> {
+    suspend fun saveContent(userId: String, asset: ContentAsset, idToken: String? = null): FlintResult<ContentAsset, AppError> {
         val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/content/${asset.id}?key=$apiKey"
         return try {
             val bodyJson = buildJsonObject {
@@ -104,6 +112,9 @@ class FirestoreRestApi(
 
             val response = httpClient.patch(url) {
                 contentType(KtorContentType.Application.Json)
+                if (!idToken.isNullOrBlank()) {
+                    header("Authorization", "Bearer $idToken")
+                }
                 setBody(bodyJson.toString())
             }
 
@@ -121,10 +132,14 @@ class FirestoreRestApi(
         }
     }
 
-    suspend fun fetchContentAssets(userId: String): List<ContentAsset> {
+    suspend fun fetchContentAssets(userId: String, idToken: String? = null): List<ContentAsset> {
         val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/users/$userId/content?key=$apiKey"
         return try {
-            val response = httpClient.get(url)
+            val response = httpClient.get(url) {
+                if (!idToken.isNullOrBlank()) {
+                    header("Authorization", "Bearer $idToken")
+                }
+            }
             if (!response.status.isSuccess()) return emptyList()
             val text = response.bodyAsText()
             val json = jsonParser.parseToJsonElement(text).jsonObject
