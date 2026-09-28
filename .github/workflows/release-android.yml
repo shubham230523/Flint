@@ -1,0 +1,56 @@
+name: Release Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release-android:
+    name: Build & Publish Android Release APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Android Release APK
+        run: ./gradlew :androidApp:assembleRelease --stacktrace
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL_NAME: ${{ secrets.OPENROUTER_MODEL_NAME }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Sign APK with Debug Keystore (for easy installation)
+        run: |
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          
+          APK_PATH="androidApp/build/outputs/apk/release/androidApp-release-unsigned.apk"
+          if [ -f "$APK_PATH" ]; then
+            $ANDROID_HOME/build-tools/*/apksigner sign --ks debug.keystore --ks-pass pass:android --out androidApp/build/outputs/apk/release/Flint-Android-Release.apk "$APK_PATH" || cp "$APK_PATH" androidApp/build/outputs/apk/release/Flint-Android-Release.apk
+          fi
+        shell: bash
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Flint Android ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            androidApp/build/outputs/apk/release/Flint-Android-Release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
