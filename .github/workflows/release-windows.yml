@@ -32,7 +32,9 @@ jobs:
 
       - name: Create Portable Zip Package
         run: |
-          Compress-Archive -Path "desktopApp/build/compose/binaries/main/app/*" -DestinationPath "desktopApp/build/compose/binaries/main/Flint-Windows-Portable.zip" -Force
+          if (Test-Path "desktopApp/build/compose/binaries/main/app") {
+            Compress-Archive -Path "desktopApp/build/compose/binaries/main/app" -DestinationPath "desktopApp/build/compose/binaries/main/Flint-Windows-Portable.zip" -Force
+          }
         shell: powershell
 
       - name: Publish GitHub Release
@@ -45,6 +47,6 @@ jobs:
           files: |
             desktopApp/build/compose/binaries/main/exe/*.exe
             desktopApp/build/compose/binaries/main/msi/*.msi
-            desktopApp/build/compose/binaries/main/Flint-Windows-Portable.zip
+            desktopApp/build/compose/binaries/main/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
