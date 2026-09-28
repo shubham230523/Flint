@@ -90,7 +90,7 @@ kotlin {
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_11
+            jvmTarget = JvmTarget.JVM_17
         }
         androidResources {
             enable = true
@@ -133,6 +133,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation("io.ktor:ktor-client-cio:3.1.1")
+            implementation(project.dependencies.platform("com.google.firebase:firebase-bom:33.9.0"))
         }
         jvmMain.dependencies {
             implementation("io.ktor:ktor-client-cio:3.1.1")
@@ -153,6 +154,9 @@ kotlin {
                 implementation("io.ktor:ktor-client-content-negotiation:3.1.1")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+                implementation("dev.gitlive:firebase-auth:2.1.0")
+                implementation("dev.gitlive:firebase-firestore:2.1.0")
+                implementation("dev.gitlive:firebase-common:2.1.0")
             }
         }
         commonTest.dependencies {

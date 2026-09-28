@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "598190078606",
+    "project_id": "flint-f14f2",
+    "storage_bucket": "flint-f14f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598190078606:android:9488890c82f6a107dc27df",
+        "android_client_info": {
+          "package_name": "com.shubhamthorat.flint"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "598190078606-atttdsa5gb1o7u361l61isjlrjc0htem.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shubhamthorat.flint",
+            "certificate_hash": "37d63e006b819cf199f01a3ec54a443e25a5a4e5"
+          }
+        },
+        {
+          "client_id": "598190078606-ugfhrppcnq1sgc4dq7uade5jp5r9p0ai.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8HK_j6JqduOivNgtAFgdf5i4sqpB5Cxs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "598190078606-ugfhrppcnq1sgc4dq7uade5jp5r9p0ai.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
