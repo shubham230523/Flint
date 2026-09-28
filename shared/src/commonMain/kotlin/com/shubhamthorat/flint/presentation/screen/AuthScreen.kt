@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,12 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.shubhamthorat.flint.data.repository.FirebaseAuthRepository
 import com.shubhamthorat.flint.domain.model.FlintResult
+import com.shubhamthorat.flint.domain.repository.AuthRepository
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
-import com.shubhamthorat.flint.presentation.component.FlintChip
 import com.shubhamthorat.flint.presentation.component.FlintCircularProgressIndicator
 import com.shubhamthorat.flint.presentation.component.FlintTextField
 import com.shubhamthorat.flint.presentation.navigation.FlintScreen
@@ -39,7 +40,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun AuthScreen(
     navigationManager: NavigationManager,
-    authRepository: FirebaseAuthRepository,
+    authRepository: AuthRepository,
+    onGoogleSignInClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var isSignUpMode by remember { mutableStateOf(false) }
@@ -58,6 +60,7 @@ fun AuthScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // App Branding Header
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
@@ -77,26 +80,32 @@ fun AuthScreen(
 
         Spacer(modifier = Modifier.height(FlintTheme.spacing.large))
 
+        // Main Authentication Card (Reduced width by 60% for a compact, centered layout)
         FlintCard(
-            modifier = Modifier.fillMaxWidth(0.9f)
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth(0.9f)
         ) {
             Column(
                 modifier = Modifier.padding(FlintTheme.spacing.large),
                 verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
             ) {
+                // Mode Toggle: Equal Weight Side-by-Side Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
-                    FlintChip(
-                        selected = !isSignUpMode,
+                    FlintButton(
                         onClick = { isSignUpMode = false; errorMessage = null },
-                        label = "Sign In"
+                        text = "Sign In",
+                        variant = if (!isSignUpMode) FlintButtonVariant.PRIMARY else FlintButtonVariant.OUTLINED,
+                        modifier = Modifier.weight(1f)
                     )
-                    FlintChip(
-                        selected = isSignUpMode,
+                    FlintButton(
                         onClick = { isSignUpMode = true; errorMessage = null },
-                        label = "Create Account"
+                        text = "Create Account",
+                        variant = if (isSignUpMode) FlintButtonVariant.PRIMARY else FlintButtonVariant.OUTLINED,
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
@@ -109,6 +118,43 @@ fun AuthScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Google Sign-In Option
+                FlintButton(
+                    onClick = {
+                        if (onGoogleSignInClick != null) {
+                            onGoogleSignInClick()
+                        } else {
+                            errorMessage = "Google Sign-In is not configured for this platform."
+                        }
+                    },
+                    text = if (isSignUpMode) "🌐 Sign up with Google" else "🌐 Sign in with Google",
+                    variant = FlintButtonVariant.OUTLINED,
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Visual Divider
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = FlintTheme.colors.surfaceVariant
+                    )
+                    Text(
+                        text = "OR EMAIL",
+                        style = FlintTheme.typography.labelSmall,
+                        color = FlintTheme.colors.textSecondary
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = FlintTheme.colors.surfaceVariant
+                    )
+                }
+
+                // Email & Password Fields
                 FlintTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -122,6 +168,7 @@ fun AuthScreen(
                     onValueChange = { password = it },
                     label = "Password",
                     placeholder = "••••••••",
+                    isPassword = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -135,6 +182,7 @@ fun AuthScreen(
                     )
                 }
 
+                // Primary Submit Button
                 FlintButton(
                     onClick = {
                         if (email.isNotBlank() && password.isNotBlank()) {
@@ -158,7 +206,7 @@ fun AuthScreen(
                             }
                         }
                     },
-                    text = if (isLoading) "Processing..." else if (isSignUpMode) "✨ Create Account" else "🔐 Sign In",
+                    text = if (isLoading) "Processing..." else if (isSignUpMode) "✨ Create Account with Email" else "🔐 Sign In with Email",
                     variant = FlintButtonVariant.PRIMARY,
                     enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
                     modifier = Modifier.fillMaxWidth()

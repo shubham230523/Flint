@@ -189,7 +189,8 @@ fun SettingsScreen(
                                 value = openRouterApiKey,
                                 onValueChange = { openRouterApiKey = it },
                                 label = "OpenRouter API Key (Pre-filled from env / local.properties)",
-                                placeholder = "sk-or-v1-..."
+                                placeholder = "sk-or-v1-...",
+                                isPassword = true
                             )
 
                             FlintTextField(
@@ -236,7 +237,8 @@ fun SettingsScreen(
                                 value = geminiApiKey,
                                 onValueChange = { geminiApiKey = it },
                                 label = "Google AI Studio / Gemini API Key",
-                                placeholder = "AIzaSy..."
+                                placeholder = "AIzaSy...",
+                                isPassword = true
                             )
                         }
                     }

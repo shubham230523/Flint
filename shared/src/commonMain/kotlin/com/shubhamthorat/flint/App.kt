@@ -23,6 +23,15 @@ import com.shubhamthorat.flint.data.repository.FirestoreCampaignRepository
 import com.shubhamthorat.flint.data.repository.FirestoreContentRepository
 import com.shubhamthorat.flint.data.repository.FirestoreCreatorDnaRepository
 import com.shubhamthorat.flint.data.repository.FirestoreSourceRepository
+import com.shubhamthorat.flint.data.repository.InMemoryCampaignRepository
+import com.shubhamthorat.flint.data.repository.InMemoryContentRepository
+import com.shubhamthorat.flint.data.repository.InMemoryCreatorDnaRepository
+import com.shubhamthorat.flint.data.repository.InMemorySourceRepository
+import com.shubhamthorat.flint.domain.repository.AuthRepository
+import com.shubhamthorat.flint.domain.repository.CampaignRepository
+import com.shubhamthorat.flint.domain.repository.ContentRepository
+import com.shubhamthorat.flint.domain.repository.CreatorDnaRepository
+import com.shubhamthorat.flint.domain.repository.SourceRepository
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintChip
@@ -49,14 +58,41 @@ fun App() {
     val navigationManager = remember { NavigationManager(initialScreen = FlintScreen.Dashboard) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Persistent Repositories
-    val authRepository = remember { FirebaseAuthRepository() }
+    // Real Firebase Repositories (with fallback for Firestore if uninitialized)
+    val authRepository: AuthRepository = remember { FirebaseAuthRepository() }
     val currentUser by authRepository.currentUserFlow.collectAsState(initial = null)
 
-    val campaignRepository = remember { FirestoreCampaignRepository() }
-    val contentRepository = remember { FirestoreContentRepository() }
-    val sourceRepository = remember { FirestoreSourceRepository() }
-    val creatorDnaRepository = remember { FirestoreCreatorDnaRepository() }
+    val campaignRepository: CampaignRepository = remember {
+        try {
+            FirestoreCampaignRepository()
+        } catch (_: Throwable) {
+            InMemoryCampaignRepository()
+        }
+    }
+
+    val contentRepository: ContentRepository = remember {
+        try {
+            FirestoreContentRepository()
+        } catch (_: Throwable) {
+            InMemoryContentRepository()
+        }
+    }
+
+    val sourceRepository: SourceRepository = remember {
+        try {
+            FirestoreSourceRepository()
+        } catch (_: Throwable) {
+            InMemorySourceRepository()
+        }
+    }
+
+    val creatorDnaRepository: CreatorDnaRepository = remember {
+        try {
+            FirestoreCreatorDnaRepository()
+        } catch (_: Throwable) {
+            InMemoryCreatorDnaRepository()
+        }
+    }
 
     FlintTheme(darkTheme = isDarkTheme) {
         Surface(
