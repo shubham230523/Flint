@@ -3,15 +3,19 @@ package com.shubhamthorat.flint.domain.repository
 import com.shubhamthorat.flint.domain.model.AppError
 import com.shubhamthorat.flint.domain.model.FlintResult
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class SourceType {
     VIDEO, AUDIO, PDF, DOCUMENT, PRESENTATION, ARTICLE, BLOG, URL, IDEA, GITHUB, TEXT
 }
 
+@Serializable
 enum class ProcessingStatus {
     QUEUED, PROCESSING, COMPLETED, FAILED
 }
 
+@Serializable
 data class SourceItem(
     val id: String,
     val title: String,

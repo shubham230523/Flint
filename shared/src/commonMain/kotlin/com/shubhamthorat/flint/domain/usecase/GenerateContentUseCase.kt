@@ -10,6 +10,7 @@ import com.shubhamthorat.flint.domain.repository.AiRequest
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentStatus
 import com.shubhamthorat.flint.domain.repository.ContentType
+import kotlin.random.Random
 
 class GenerateContentUseCase(
     private val aiRepository: AiRepository
@@ -27,8 +28,9 @@ class GenerateContentUseCase(
 
         return aiRepository.generateContent(aiRequest).map { response ->
             val cleanedBody = com.shubhamthorat.flint.domain.ai.AiContentCleaner.clean(response.content)
+            val randomSuffix = Random.nextInt(100000, 999999)
             val asset = ContentAsset(
-                id = "asset_${targetType.name.lowercase()}",
+                id = "asset_${targetType.name.lowercase()}_$randomSuffix",
                 sourceId = null,
                 title = "Generated ${targetType.name.replace('_', ' ')}",
                 body = cleanedBody,
@@ -36,7 +38,7 @@ class GenerateContentUseCase(
                 status = ContentStatus.DRAFT,
                 platform = getPlatformForType(targetType)
             )
-            FlintLogger.i(tag, "Content asset successfully generated: ${asset.title} for platform ${asset.platform}")
+            FlintLogger.i(tag, "Content asset successfully generated: ${asset.title} (ID: ${asset.id}) for platform ${asset.platform}")
             asset
         }
     }

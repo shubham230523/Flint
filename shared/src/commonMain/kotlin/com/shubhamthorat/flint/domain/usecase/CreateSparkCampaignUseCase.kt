@@ -7,6 +7,7 @@ import com.shubhamthorat.flint.domain.model.CreatorDNA
 import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentType
+import kotlin.random.Random
 
 class CreateSparkCampaignUseCase(
     private val generateContentUseCase: GenerateContentUseCase
@@ -39,9 +40,11 @@ class CreateSparkCampaignUseCase(
             }
         }
 
+        val randomSuffix = Random.nextInt(100000, 999999)
+        val shortTitle = if (ideaOrSource.length > 40) "${ideaOrSource.take(37)}..." else ideaOrSource
         val campaign = Campaign(
-            id = "campaign_${items.size}_assets",
-            title = "Campaign: $ideaOrSource",
+            id = "campaign_$randomSuffix",
+            title = "Campaign: $shortTitle",
             ideaOrSource = ideaOrSource,
             items = items
         )
