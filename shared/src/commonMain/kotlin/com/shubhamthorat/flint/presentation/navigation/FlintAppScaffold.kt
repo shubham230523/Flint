@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -108,28 +109,53 @@ fun FlintAppScaffold(
         } else {
             Scaffold(
                 bottomBar = {
-                    NavigationBar(
-                        containerColor = FlintTheme.colors.surface,
-                        contentColor = FlintTheme.colors.onSurface
+                    Surface(
+                        color = FlintTheme.colors.surface,
+                        tonalElevation = 3.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
                     ) {
-                        navItems.forEach { screen ->
-                            val selected = currentScreen == screen
-                            NavigationBarItem(
-                                selected = selected,
-                                onClick = { navigationManager.navigateTo(screen, clearBackstack = true) },
-                                icon = {},
-                                label = {
-                                    Text(
-                                        text = screen.title,
-                                        style = FlintTheme.typography.labelSmall
-                                    )
-                                },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = FlintTheme.colors.primary,
-                                    selectedTextColor = FlintTheme.colors.primary,
-                                    indicatorColor = FlintTheme.colors.surfaceVariant
-                                )
-                            )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceAround,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            navItems.forEach { screen ->
+                                val selected = currentScreen == screen
+                                Surface(
+                                    onClick = { navigationManager.navigateTo(screen, clearBackstack = true) },
+                                    shape = RoundedCornerShape(FlintTheme.radius.medium),
+                                    color = if (selected) FlintTheme.colors.surfaceVariant else Color.Transparent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .padding(horizontal = 2.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        val mobileTitle = when (screen) {
+                                            FlintScreen.Create -> "Create"
+                                            FlintScreen.ContentLibrary -> "Library"
+                                            else -> screen.title
+                                        }
+                                        Text(
+                                            text = mobileTitle,
+                                            style = FlintTheme.typography.labelSmall,
+                                            color = if (selected) FlintTheme.colors.primary else FlintTheme.colors.onSurface,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                            textAlign = TextAlign.Center,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

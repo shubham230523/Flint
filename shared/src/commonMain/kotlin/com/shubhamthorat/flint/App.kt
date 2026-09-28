@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +19,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.runtime.LaunchedEffect
+import com.shubhamthorat.flint.core.FlintBuildConfig
 import com.shubhamthorat.flint.data.repository.FirebaseAuthRepository
 import com.shubhamthorat.flint.data.repository.FirestoreCampaignRepository
 import com.shubhamthorat.flint.data.repository.FirestoreContentRepository
@@ -62,6 +66,17 @@ fun App() {
     val authRepository: AuthRepository = remember { FirebaseAuthRepository() }
     val currentUser by authRepository.currentUserFlow.collectAsState(initial = null)
 
+    LaunchedEffect(Unit) {
+        val current = authRepository.getCurrentUser()
+        if (current == null && FlintBuildConfig.TEST_EMAIL.isNotBlank() && FlintBuildConfig.TEST_PASSWORD.isNotBlank()) {
+            try {
+                authRepository.signInWithEmail(FlintBuildConfig.TEST_EMAIL, FlintBuildConfig.TEST_PASSWORD)
+            } catch (_: Throwable) {
+                // Ignore auto-sign-in error
+            }
+        }
+    }
+
     val campaignRepository: CampaignRepository = remember {
         try {
             FirestoreCampaignRepository(authRepository)
@@ -99,7 +114,11 @@ fun App() {
             modifier = Modifier.fillMaxSize(),
             color = FlintTheme.colors.background
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+            ) {
                 // Top Brand Bar
                 Row(
                     modifier = Modifier
@@ -111,7 +130,9 @@ fun App() {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
                             text = "FLINT",
                             style = FlintTheme.typography.headlineLarge,
@@ -121,12 +142,14 @@ fun App() {
                         Text(
                             text = currentUser?.let { "Signed in as ${it.email ?: "Creator"}" } ?: "One spark. Endless stories.",
                             style = FlintTheme.typography.labelSmall,
-                            color = FlintTheme.colors.textSecondary
+                            color = FlintTheme.colors.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small),
+                        horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (currentUser != null) {
@@ -144,7 +167,7 @@ fun App() {
                         FlintChip(
                             selected = isDarkTheme,
                             onClick = { isDarkTheme = !isDarkTheme },
-                            label = if (isDarkTheme) "🌙 Dark" else "☀️ Light"
+                            label = if (isDarkTheme) "Dark" else "Light"
                         )
                     }
                 }

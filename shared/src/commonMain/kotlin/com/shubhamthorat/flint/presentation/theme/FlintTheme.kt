@@ -13,6 +13,7 @@ fun FlintTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    com.shubhamthorat.flint.adjustSystemBars(darkTheme)
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val typography = FlintTypography()
     val spacing = FlintSpacing()

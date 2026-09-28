@@ -56,41 +56,23 @@ fun AuthScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(FlintTheme.spacing.large),
+            .padding(horizontal = FlintTheme.spacing.medium, vertical = FlintTheme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
-        // App Branding Header
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
-        ) {
-            Text(
-                text = "FLINT",
-                style = FlintTheme.typography.displayMedium,
-                color = FlintTheme.colors.primary,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "One spark. Endless stories.",
-                style = FlintTheme.typography.bodyLarge,
-                color = FlintTheme.colors.textSecondary
-            )
-        }
+        Spacer(modifier = Modifier.height(36.dp))
 
-        Spacer(modifier = Modifier.height(FlintTheme.spacing.large))
-
-        // Main Authentication Card (Reduced width by 60% for a compact, centered layout)
+        // Main Authentication Card (Optimized spacing below top brand bar for Android, Tablet, and iOS)
         FlintCard(
             modifier = Modifier
-                .widthIn(max = 420.dp)
-                .fillMaxWidth(0.9f)
+                .widthIn(max = 440.dp)
+                .fillMaxWidth(0.95f)
         ) {
             Column(
                 modifier = Modifier.padding(FlintTheme.spacing.large),
                 verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
             ) {
-                // Mode Toggle: Equal Weight Side-by-Side Buttons
+                // Mode Toggle: Equal Weight Side-by-Side Buttons ("Sign In" and "Sign Up")
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
@@ -103,7 +85,7 @@ fun AuthScreen(
                     )
                     FlintButton(
                         onClick = { isSignUpMode = true; errorMessage = null },
-                        text = "Create Account",
+                        text = "Sign Up",
                         variant = if (isSignUpMode) FlintButtonVariant.PRIMARY else FlintButtonVariant.OUTLINED,
                         modifier = Modifier.weight(1f)
                     )

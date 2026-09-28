@@ -222,7 +222,8 @@ fun DashboardScreen(
                             FlintChip(
                                 selected = true,
                                 onClick = {},
-                                label = "${campaign.items.size} Assets"
+                                label = "${campaign.items.size} Assets",
+                                modifier = Modifier.padding(start = FlintTheme.spacing.small)
                             )
                         }
                         Text(
