@@ -24,7 +24,7 @@ jobs:
           cache: 'gradle'
 
       - name: Build Windows Executable & Distributable
-        run: ./gradlew :desktopApp:packageDistributionForCurrentOS --stacktrace
+        run: ./gradlew :desktopApp:packageDistributionForCurrentOS :desktopApp:createDistributable --stacktrace
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENROUTER_MODEL_NAME: ${{ secrets.OPENROUTER_MODEL_NAME }}
@@ -32,7 +32,9 @@ jobs:
 
       - name: Create Portable Zip Package
         run: |
-          if (Test-Path "desktopApp/build/compose/binaries/main/app") {
+          if (Test-Path "desktopApp/build/compose/binaries/main/app/Flint") {
+            Compress-Archive -Path "desktopApp/build/compose/binaries/main/app/Flint" -DestinationPath "desktopApp/build/compose/binaries/main/Flint-Windows-Portable.zip" -Force
+          } elseif (Test-Path "desktopApp/build/compose/binaries/main/app") {
             Compress-Archive -Path "desktopApp/build/compose/binaries/main/app" -DestinationPath "desktopApp/build/compose/binaries/main/Flint-Windows-Portable.zip" -Force
           }
         shell: powershell

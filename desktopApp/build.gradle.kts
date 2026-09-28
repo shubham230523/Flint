@@ -23,6 +23,12 @@ compose.desktop {
             targetFormats(TargetFormat.Exe, TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
             packageName = "Flint"
             packageVersion = "1.0.0"
+
+            windows {
+                perUserInstall = true
+                menuGroup = "Flint"
+                upgradeUuid = "a1b2c3d4-e5f6-7890-abcd-ef0123456789"
+            }
         }
     }
 }
