@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -179,11 +181,12 @@ fun SettingsScreen(
 
                 when (selectedProvider) {
                     "OpenRouter" -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)) {
                             Text(
                                 text = "OpenRouter Configuration",
                                 style = FlintTheme.typography.titleMedium
                             )
+                            Spacer(modifier = Modifier.height(FlintTheme.spacing.extraSmall))
 
                             FlintTextField(
                                 value = openRouterApiKey,
@@ -227,11 +230,12 @@ fun SettingsScreen(
                         }
                     }
                     "Gemini" -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)) {
                             Text(
                                 text = "Google Gemini Configuration",
                                 style = FlintTheme.typography.titleMedium
                             )
+                            Spacer(modifier = Modifier.height(FlintTheme.spacing.extraSmall))
 
                             FlintTextField(
                                 value = geminiApiKey,
@@ -243,11 +247,12 @@ fun SettingsScreen(
                         }
                     }
                     "Ollama Cloud" -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)) {
                             Text(
                                 text = "Ollama Cloud Configuration",
                                 style = FlintTheme.typography.titleMedium
                             )
+                            Spacer(modifier = Modifier.height(FlintTheme.spacing.extraSmall))
 
                             FlintTextField(
                                 value = ollamaEndpointUrl,
