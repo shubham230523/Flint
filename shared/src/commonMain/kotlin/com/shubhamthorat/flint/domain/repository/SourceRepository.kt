@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class SourceType {
-    VIDEO, AUDIO, PDF, DOCUMENT, PRESENTATION, ARTICLE, BLOG, URL, IDEA, GITHUB, TEXT
+    VIDEO, AUDIO, PDF, DOCUMENT, PRESENTATION, ARTICLE, BLOG, URL, IDEA, GITHUB, TEXT, YOUTUBE_VIDEO
 }
 
 @Serializable
