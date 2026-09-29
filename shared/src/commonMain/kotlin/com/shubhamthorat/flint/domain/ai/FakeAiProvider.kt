@@ -8,8 +8,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 class FakeAiProvider(
-    override val providerName: String,
+    override val providerName: String = "OpenRouter",
     private val shouldSucceed: Boolean = true,
+    private val fixedResponseText: String? = null,
     private val responseDelayMs: Long = 0L
 ) : AiProvider {
 
@@ -22,9 +23,10 @@ class FakeAiProvider(
                 )
             )
         }
+        val text = fixedResponseText ?: "Generated response from $providerName for prompt: ${request.prompt}"
         return FlintResult.Success(
             AiResponse(
-                content = "Generated response from $providerName for prompt: ${request.prompt}",
+                content = text,
                 providerUsed = providerName,
                 tokensUsed = request.prompt.length * 2
             )
