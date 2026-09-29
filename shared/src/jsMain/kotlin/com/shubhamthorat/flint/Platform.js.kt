@@ -1,5 +1,6 @@
 package com.shubhamthorat.flint
 
+import androidx.compose.runtime.Composable
 import web.navigator.navigator
 
 class JsPlatform: Platform {
@@ -12,3 +13,6 @@ class JsPlatform: Platform {
 }
 
 actual fun getPlatform(): Platform = JsPlatform()
+
+@Composable
+actual fun adjustSystemBars(darkTheme: Boolean) {}

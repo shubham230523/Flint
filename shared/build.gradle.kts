@@ -16,7 +16,9 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+val isMac = System.getProperty("os.name").lowercase().contains("mac")
 val isDesktopOnly = providers.gradleProperty("flint.desktopOnly").orNull?.toBoolean() ?: false
+val isWebOnly = providers.gradleProperty("flint.webOnly").orNull?.toBoolean() ?: false
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -114,7 +116,16 @@ kotlin {
         }
     }
 
-    if (!isDesktopOnly) {
+    js {
+        browser {
+            commonWebpackConfig {
+                outputFileName = "webApp.js"
+            }
+        }
+        binaries.executable()
+    }
+
+    if (isMac && !isDesktopOnly && !isWebOnly) {
         listOf(
             iosArm64(),
             iosSimulatorArm64()
@@ -123,11 +134,6 @@ kotlin {
                 baseName = "Shared"
                 isStatic = true
             }
-        }
-
-        js {
-            browser()
-            binaries.executable()
         }
     }
 
@@ -168,10 +174,8 @@ kotlin {
             implementation(libs.kotlinx.coroutinesTest)
         }
 
-        if (!isDesktopOnly) {
-            findByName("jsMain")?.dependencies {
-                implementation(libs.wrappers.browser)
-            }
+        findByName("jsMain")?.dependencies {
+            implementation(libs.wrappers.browser)
         }
     }
 }
