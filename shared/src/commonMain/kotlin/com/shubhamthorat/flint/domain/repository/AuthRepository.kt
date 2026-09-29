@@ -19,5 +19,7 @@ interface AuthRepository {
     suspend fun getIdToken(): String? = null
     suspend fun signInWithEmail(email: String, password: String): FlintResult<FlintUser, AppError>
     suspend fun signUpWithEmail(email: String, password: String): FlintResult<FlintUser, AppError>
+    suspend fun signInWithGoogleIdToken(idToken: String): FlintResult<FlintUser, AppError> =
+        FlintResult.Error(AppError.Auth("Google Sign-In is not supported on this repository implementation."))
     suspend fun signOut(): FlintResult<Unit, AppError>
 }

@@ -123,7 +123,7 @@ class FirebaseAuthRepository(
         return signUpWithEmailRest(email, password)
     }
 
-    suspend fun signInWithGoogleIdToken(idToken: String): FlintResult<FlintUser, AppError> {
+    override suspend fun signInWithGoogleIdToken(idToken: String): FlintResult<FlintUser, AppError> {
         FlintLogger.i(tag, "Attempting Google credential sign-in")
         try {
             val credential = GoogleAuthProvider.credential(idToken = idToken, accessToken = null)

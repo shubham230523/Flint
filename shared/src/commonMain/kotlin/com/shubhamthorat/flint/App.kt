@@ -56,13 +56,15 @@ import com.shubhamthorat.flint.presentation.theme.FlintTheme
 import kotlinx.coroutines.launch
 
 @Composable
-fun App() {
+fun App(
+    authRepository: AuthRepository = remember { FirebaseAuthRepository() },
+    onGoogleSignInClick: (suspend () -> Unit)? = null
+) {
     var isDarkTheme by remember { mutableStateOf(false) }
     val navigationManager = remember { NavigationManager(initialScreen = FlintScreen.Dashboard) }
     val coroutineScope = rememberCoroutineScope()
 
     // Real Firebase Repositories (with fallback for Firestore if uninitialized)
-    val authRepository: AuthRepository = remember { FirebaseAuthRepository() }
     val currentUser by authRepository.currentUserFlow.collectAsState(initial = null)
 
     val campaignRepository: CampaignRepository = remember {
@@ -165,7 +167,8 @@ fun App() {
                 if (currentUser == null) {
                     AuthScreen(
                         navigationManager = navigationManager,
-                        authRepository = authRepository
+                        authRepository = authRepository,
+                        onGoogleSignInClick = onGoogleSignInClick
                     )
                 } else {
                     // Responsive Adaptive Navigation Scaffold

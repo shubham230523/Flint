@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 fun AuthScreen(
     navigationManager: NavigationManager,
     authRepository: AuthRepository,
-    onGoogleSignInClick: (() -> Unit)? = null,
+    onGoogleSignInClick: (suspend () -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var isSignUpMode by remember { mutableStateOf(false) }
@@ -104,7 +104,17 @@ fun AuthScreen(
                 FlintButton(
                     onClick = {
                         if (onGoogleSignInClick != null) {
-                            onGoogleSignInClick()
+                            isLoading = true
+                            errorMessage = null
+                            coroutineScope.launch {
+                                try {
+                                    onGoogleSignInClick()
+                                } catch (e: Exception) {
+                                    errorMessage = e.message ?: "Google Sign-In failed."
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
                         } else {
                             errorMessage = "Google Sign-In is not configured for this platform."
                         }
