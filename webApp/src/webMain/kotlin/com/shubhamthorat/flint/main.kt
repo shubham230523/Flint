@@ -35,8 +35,9 @@ fun main() {
                         }
                     }
                 } catch (e: Exception) {
-                    println("🔴 [FLINT_WEB] Google Sign-In Exception: ${e.message}")
-                    throw e
+                    val msg = e.message.takeIf { !it.isNullOrBlank() } ?: e.toString()
+                    println("🔴 [FLINT_WEB] Google Sign-In Exception: $msg")
+                    throw Exception(msg)
                 }
             }
         )
@@ -82,7 +83,7 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
         }
 
         window.asDynamic().onGoogleTokenClientError = { err: dynamic ->
-            val msg = err?.message as? String ?: err?.type as? String ?: "Google OAuth Initialization Error"
+            val msg = err?.message as? String ?: err?.type as? String ?: err?.toString() ?: "Google OAuth Initialization Error"
             println("❌ [FLINT_WEB] Google OAuth Client Error: $msg")
             if (!deferred.isCompleted) {
                 deferred.completeExceptionally(Exception(msg))
@@ -91,16 +92,19 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
 
         val hasOAuth2 = js("typeof google !== 'undefined' && google.accounts && google.accounts.oauth2") as Boolean
         if (hasOAuth2) {
-            println("🌐 [FLINT_WEB] Initializing google.accounts.oauth2.initTokenClient...")
-            val tokenClient = js("""
-                google.accounts.oauth2.initTokenClient({
-                    client_id: clientId,
-                    scope: 'openid email profile',
-                    callback: window.onGoogleTokenClientCallback,
-                    error_callback: window.onGoogleTokenClientError
-                })
-            """)
-            tokenClient.requestAccessToken(js("({ prompt: 'select_account' })"))
+            println("🌐 [FLINT_WEB] Initializing google.accounts.oauth2.initTokenClient with Client ID: $clientId")
+            val tokenClientConfig = js("{}")
+            tokenClientConfig.client_id = clientId
+            tokenClientConfig.scope = "openid email profile"
+            tokenClientConfig.callback = window.asDynamic().onGoogleTokenClientCallback
+            tokenClientConfig.error_callback = window.asDynamic().onGoogleTokenClientError
+
+            val googleAccounts = js("google.accounts.oauth2")
+            val tokenClient = googleAccounts.initTokenClient(tokenClientConfig)
+
+            val promptConfig = js("{}")
+            promptConfig.prompt = "select_account"
+            tokenClient.requestAccessToken(promptConfig)
         } else {
             println("⚠️ [FLINT_WEB] google.accounts.oauth2 not available, attempting google.accounts.id fallback...")
             val hasGoogleId = js("typeof google !== 'undefined' && google.accounts && google.accounts.id") as Boolean
@@ -142,9 +146,10 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
             }
         }
     } catch (e: Throwable) {
-        println("🔴 [FLINT_WEB] Exception in requestGoogleTokenWeb: ${e.message}")
+        val errText = e.message.takeIf { !it.isNullOrBlank() } ?: e.toString()
+        println("🔴 [FLINT_WEB] Exception in requestGoogleTokenWeb: $errText")
         if (!deferred.isCompleted) {
-            deferred.completeExceptionally(e)
+            deferred.completeExceptionally(Exception(errText))
         }
     }
 
