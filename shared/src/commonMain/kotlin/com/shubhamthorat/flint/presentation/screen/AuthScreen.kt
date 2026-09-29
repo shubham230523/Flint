@@ -99,10 +99,10 @@ fun AuthScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Google Sign-In Option
-                FlintButton(
-                    onClick = {
-                        if (onGoogleSignInClick != null) {
+                // Google Sign-In Option (Only shown when configured for the platform, e.g., Android)
+                if (onGoogleSignInClick != null) {
+                    FlintButton(
+                        onClick = {
                             isLoading = true
                             errorMessage = null
                             coroutineScope.launch {
@@ -114,35 +114,33 @@ fun AuthScreen(
                                     isLoading = false
                                 }
                             }
-                        } else {
-                            errorMessage = "Google Sign-In is not configured for this platform."
-                        }
-                    },
-                    text = if (isSignUpMode) "🌐 Sign up with Google" else "🌐 Sign in with Google",
-                    variant = FlintButtonVariant.OUTLINED,
-                    enabled = !isLoading,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                        },
+                        text = if (isSignUpMode) "🌐 Sign up with Google" else "🌐 Sign in with Google",
+                        variant = FlintButtonVariant.OUTLINED,
+                        enabled = !isLoading,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                // Visual Divider
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
-                ) {
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = FlintTheme.colors.surfaceVariant
-                    )
-                    Text(
-                        text = "OR EMAIL",
-                        style = FlintTheme.typography.labelSmall,
-                        color = FlintTheme.colors.textSecondary
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = FlintTheme.colors.surfaceVariant
-                    )
+                    // Visual Divider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = FlintTheme.colors.surfaceVariant
+                        )
+                        Text(
+                            text = "OR EMAIL",
+                            style = FlintTheme.typography.labelSmall,
+                            color = FlintTheme.colors.textSecondary
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = FlintTheme.colors.surfaceVariant
+                        )
+                    }
                 }
 
                 // Email & Password Fields

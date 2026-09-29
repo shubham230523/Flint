@@ -93,10 +93,11 @@ class FirebaseAuthRepository(
                 return FlintResult.Success(user)
             }
         } catch (e: Throwable) {
-            if (!e.message.orEmpty().contains("FirebaseApp is not initialized", ignoreCase = true)) {
+            if (!isUninitializedFirebaseError(e.message)) {
                 FlintLogger.e(tag, "Native Firebase Sign-In failed: ${e.message}")
                 return FlintResult.Error(AppError.Auth(cleanFirebaseErrorMessage(e.message)))
             }
+            FlintLogger.w(tag, "Native Firebase not initialized (${e.message}). Falling back to REST API...")
         }
 
         // Fallback to Firebase REST Auth API (for Desktop/Web or uninitialized native processes)
@@ -113,10 +114,11 @@ class FirebaseAuthRepository(
                 return FlintResult.Success(user)
             }
         } catch (e: Throwable) {
-            if (!e.message.orEmpty().contains("FirebaseApp is not initialized", ignoreCase = true)) {
+            if (!isUninitializedFirebaseError(e.message)) {
                 FlintLogger.e(tag, "Native Firebase Registration failed: ${e.message}")
                 return FlintResult.Error(AppError.Auth(cleanFirebaseErrorMessage(e.message)))
             }
+            FlintLogger.w(tag, "Native Firebase not initialized (${e.message}). Falling back to REST API...")
         }
 
         // Fallback to Firebase REST Auth API
@@ -278,18 +280,30 @@ class FirebaseAuthRepository(
         }
     }
 
+    private fun isUninitializedFirebaseError(msg: String?): Boolean {
+        if (msg.isNullOrBlank()) return true
+        val lower = msg.lowercase()
+        return lower.contains("firebaseapp is not initialized") ||
+                lower.contains("no firebase app") ||
+                lower.contains("app/no-app") ||
+                lower.contains("initializeapp") ||
+                lower.contains("not initialized")
+    }
+
     private fun cleanFirebaseErrorMessage(raw: String?): String {
         if (raw.isNullOrBlank()) return "Authentication failed. Please check your credentials."
         return when {
-            raw.contains("EMAIL_NOT_FOUND", ignoreCase = true) || raw.contains("INVALID_LOGIN_CREDENTIALS", ignoreCase = true) ->
-                "Account not found or invalid credentials."
+            raw.contains("EMAIL_NOT_FOUND", ignoreCase = true) ->
+                "Account not found. If you are a new user, please click 'Sign Up' above first."
+            raw.contains("INVALID_LOGIN_CREDENTIALS", ignoreCase = true) ->
+                "Invalid credentials or account not registered. Please check your password or switch to 'Sign Up'."
             raw.contains("INVALID_PASSWORD", ignoreCase = true) -> "Incorrect password. Please try again."
-            raw.contains("EMAIL_EXISTS", ignoreCase = true) -> "An account with this email address already exists."
+            raw.contains("EMAIL_EXISTS", ignoreCase = true) -> "An account with this email address already exists. Please switch to 'Sign In'."
             raw.contains("WEAK_PASSWORD", ignoreCase = true) -> "Password is too weak. Please use at least 6 characters."
             raw.contains("INVALID_EMAIL", ignoreCase = true) -> "Please enter a valid email address."
             raw.contains("USER_DISABLED", ignoreCase = true) -> "This user account has been disabled."
             raw.contains("OPERATION_NOT_ALLOWED", ignoreCase = true) ->
-                "Google Sign-In is disabled in Firebase Console. Please enable 'Google' under Firebase Console > Authentication > Sign-in method."
+                "Email/Password sign-in is disabled in Firebase Console. Enable 'Email/Password' under Firebase Console > Authentication > Sign-in method."
             raw.contains("INVALID_IDP_RESPONSE", ignoreCase = true) ->
                 "Invalid Google credential or Web Client ID mismatch."
             else -> raw.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }
