@@ -4,21 +4,24 @@ on:
   push:
     branches:
       - master
-    tags:
-      - 'v*'
+  workflow_dispatch:
 
 concurrency:
   group: 'pages'
   cancel-in-progress: true
 
 jobs:
-  deploy-web:
+  deploy-pages:
     name: Build & Deploy Web App to GitHub Pages
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pages: write
       id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout Repository
@@ -41,9 +44,11 @@ jobs:
           OPENROUTER_MODEL_NAME: ${{ secrets.OPENROUTER_MODEL_NAME }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Deploy to GitHub Pages Branch (gh-pages)
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: 'webApp/build/dist/js/productionExecutable'
-          force_orphan: true
+          path: 'webApp/build/dist/js/productionExecutable'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
