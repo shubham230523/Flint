@@ -33,6 +33,14 @@ LinkedIn Post        X Thread              Newsletter
 
 ## ✨ Live Core Features
 
+### 🎬 YouTube → Instagram Pipeline (Stage 1)
+Transform long-form YouTube video URLs into Instagram Reels, Carousels, Story Sequences, Quote Cards, and Captions.
+* **URL Ingestion & Validation**: Validates YouTube watch, short, and Shorts URLs; extracts video metadata and transcripts.
+* **Video Content Understanding**: Analyzes video transcript with AI to extract summary, main topics, key takeaways, notable quotes, and hooks.
+* **Instagram Opportunity Engine**: Automatically discovers varied Instagram post opportunities (`REEL_IDEA`, `CAROUSEL`, `STORY_SEQUENCE`, `QUOTE_POST`).
+* **Specialized Content Generation**: Generates full Reel scripts, Carousel slide decks, Story sequences, Quote cards, and Captions customized with Creator DNA.
+* **Content Library Integration**: Save generated assets directly into Flint's Content Library for scheduling or editing.
+
 ### ⚡ Spark Workspace (Campaign Generator)
 Turn any raw text, document summary, or topic idea into an entire multi-channel content campaign.
 * **Target Channels**: LinkedIn Posts, X (Twitter) Threads, Newsletters, YouTube Scripts, and Instagram Carousels.

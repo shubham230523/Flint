@@ -93,8 +93,8 @@ fun DashboardScreen(
                         modifier = Modifier.weight(1f)
                     )
                     FlintButton(
-                        onClick = { navigationManager.navigateTo(FlintScreen.CreatorDNA) },
-                        text = "🧬 Brand DNA",
+                        onClick = { navigationManager.navigateTo(FlintScreen.YouTubeWorkspace) },
+                        text = "🎬 YouTube → Instagram",
                         variant = FlintButtonVariant.SECONDARY,
                         modifier = Modifier.weight(1f)
                     )

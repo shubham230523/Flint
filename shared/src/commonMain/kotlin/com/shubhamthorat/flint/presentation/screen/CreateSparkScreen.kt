@@ -88,12 +88,23 @@ fun CreateSparkScreen(
             .padding(FlintTheme.spacing.medium),
         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.large)
     ) {
-        Text(
-            text = "Create Spark Workspace",
-            style = FlintTheme.typography.displayMedium,
-            color = FlintTheme.colors.primary,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Create Spark Workspace",
+                style = FlintTheme.typography.displayMedium,
+                color = FlintTheme.colors.primary,
+                fontWeight = FontWeight.Bold
+            )
+            FlintButton(
+                onClick = { navigationManager.navigateTo(FlintScreen.YouTubeWorkspace) },
+                text = "🎬 Start with YouTube",
+                variant = FlintButtonVariant.SECONDARY
+            )
+        }
 
         // Source Input Card
         FlintCard(modifier = Modifier.fillMaxWidth()) {

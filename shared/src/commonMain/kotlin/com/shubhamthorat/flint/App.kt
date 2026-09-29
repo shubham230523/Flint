@@ -229,6 +229,12 @@ fun App(
                             FlintScreen.CreatorDNA -> CreatorDnaScreen(
                                 creatorDnaRepository = creatorDnaRepository
                             )
+                            FlintScreen.YouTubeWorkspace -> com.shubhamthorat.flint.presentation.screen.YouTubeWorkspaceScreen(
+                                navigationManager = navigationManager,
+                                sourceRepository = sourceRepository,
+                                contentRepository = contentRepository,
+                                creatorDnaRepository = creatorDnaRepository
+                            )
                             FlintScreen.Settings, FlintScreen.Membership -> SettingsScreen(
                                 navigationManager = navigationManager,
                                 isDarkTheme = isDarkTheme,
