@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.shubhamthorat.flint.core.FlintBuildConfig
 import com.shubhamthorat.flint.data.repository.FirebaseAuthRepository
 import com.shubhamthorat.flint.data.repository.FirestoreCampaignRepository
 import com.shubhamthorat.flint.data.repository.FirestoreContentRepository
@@ -30,6 +32,7 @@ import com.shubhamthorat.flint.data.repository.InMemoryCampaignRepository
 import com.shubhamthorat.flint.data.repository.InMemoryContentRepository
 import com.shubhamthorat.flint.data.repository.InMemoryCreatorDnaRepository
 import com.shubhamthorat.flint.data.repository.InMemorySourceRepository
+import com.shubhamthorat.flint.domain.model.FlintResult
 import com.shubhamthorat.flint.domain.repository.AuthRepository
 import com.shubhamthorat.flint.domain.repository.CampaignRepository
 import com.shubhamthorat.flint.domain.repository.ContentRepository
@@ -66,6 +69,20 @@ fun App(
 
     // Real Firebase Repositories (with fallback for Firestore if uninitialized)
     val currentUser by authRepository.currentUserFlow.collectAsState(initial = null)
+
+    // Auto sign-in using test credentials from local.properties
+    LaunchedEffect(Unit) {
+        if (authRepository.getCurrentUser() == null) {
+            val testEmail = FlintBuildConfig.TEST_EMAIL.trim()
+            val testPassword = FlintBuildConfig.TEST_PASSWORD.trim()
+            if (testEmail.isNotEmpty() && testPassword.isNotEmpty()) {
+                val result = authRepository.signInWithEmail(testEmail, testPassword)
+                if (result is FlintResult.Error) {
+                    authRepository.signUpWithEmail(testEmail, testPassword)
+                }
+            }
+        }
+    }
 
     val campaignRepository: CampaignRepository = remember {
         try {
