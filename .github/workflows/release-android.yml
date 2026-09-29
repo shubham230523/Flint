@@ -33,14 +33,9 @@ jobs:
           OPENROUTER_MODEL_NAME: ${{ secrets.OPENROUTER_MODEL_NAME }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Sign APK with Debug Keystore (for easy installation)
+      - name: Prepare Signed APK for Release
         run: |
-          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          
-          APK_PATH="androidApp/build/outputs/apk/release/androidApp-release-unsigned.apk"
-          if [ -f "$APK_PATH" ]; then
-            $ANDROID_HOME/build-tools/*/apksigner sign --ks debug.keystore --ks-pass pass:android --out androidApp/build/outputs/apk/release/Flint-Android-Release.apk "$APK_PATH" || cp "$APK_PATH" androidApp/build/outputs/apk/release/Flint-Android-Release.apk
-          fi
+          cp androidApp/build/outputs/apk/release/androidApp-release.apk androidApp/build/outputs/apk/release/Flint-Android-Release.apk
         shell: bash
 
       - name: Publish GitHub Release
