@@ -21,8 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.LaunchedEffect
-import com.shubhamthorat.flint.core.FlintBuildConfig
 import com.shubhamthorat.flint.data.repository.FirebaseAuthRepository
 import com.shubhamthorat.flint.data.repository.FirestoreCampaignRepository
 import com.shubhamthorat.flint.data.repository.FirestoreContentRepository
@@ -66,17 +64,6 @@ fun App() {
     // Real Firebase Repositories (with fallback for Firestore if uninitialized)
     val authRepository: AuthRepository = remember { FirebaseAuthRepository() }
     val currentUser by authRepository.currentUserFlow.collectAsState(initial = null)
-
-    LaunchedEffect(Unit) {
-        val current = authRepository.getCurrentUser()
-        if (current == null && FlintBuildConfig.TEST_EMAIL.isNotBlank() && FlintBuildConfig.TEST_PASSWORD.isNotBlank()) {
-            try {
-                authRepository.signInWithEmail(FlintBuildConfig.TEST_EMAIL, FlintBuildConfig.TEST_PASSWORD)
-            } catch (_: Throwable) {
-                // Ignore auto-sign-in error
-            }
-        }
-    }
 
     val campaignRepository: CampaignRepository = remember {
         try {
