@@ -72,14 +72,12 @@ fun App(
 
     // Auto sign-in using test credentials from local.properties
     LaunchedEffect(Unit) {
-        if (authRepository.getCurrentUser() == null) {
-            val testEmail = FlintBuildConfig.TEST_EMAIL.trim()
-            val testPassword = FlintBuildConfig.TEST_PASSWORD.trim()
-            if (testEmail.isNotEmpty() && testPassword.isNotEmpty()) {
-                val result = authRepository.signInWithEmail(testEmail, testPassword)
-                if (result is FlintResult.Error) {
-                    authRepository.signUpWithEmail(testEmail, testPassword)
-                }
+        val testEmail = FlintBuildConfig.TEST_EMAIL.trim()
+        val testPassword = FlintBuildConfig.TEST_PASSWORD.trim()
+        if (testEmail.isNotEmpty() && testPassword.isNotEmpty()) {
+            val result = authRepository.signInWithEmail(testEmail, testPassword)
+            if (result is FlintResult.Error) {
+                authRepository.signUpWithEmail(testEmail, testPassword)
             }
         }
     }

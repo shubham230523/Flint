@@ -22,7 +22,10 @@ class UiScreensTest {
         assertEquals("Campaigns", FlintScreen.Campaigns.title)
 
         assertEquals("creator_dna", FlintScreen.CreatorDNA.route)
-        assertEquals("Creator DNA", FlintScreen.CreatorDNA.title)
+        assertEquals("Brand DNA", FlintScreen.CreatorDNA.title)
+
+        assertEquals("youtube_workspace", FlintScreen.YouTubeWorkspace.route)
+        assertEquals("YouTube → Instagram", FlintScreen.YouTubeWorkspace.title)
 
         assertEquals("settings", FlintScreen.Settings.route)
         assertEquals("Settings", FlintScreen.Settings.title)

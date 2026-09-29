@@ -17,7 +17,7 @@ sealed class FlintScreen(
     object Campaigns : FlintScreen("campaigns", "Campaigns")
     object Calendar : FlintScreen("calendar", "Calendar")
     object Analytics : FlintScreen("analytics", "Analytics")
-    object CreatorDNA : FlintScreen("creator_dna", "Creator DNA")
+    object CreatorDNA : FlintScreen("creator_dna", "Brand DNA")
     object YouTubeWorkspace : FlintScreen("youtube_workspace", "YouTube → Instagram")
     object Settings : FlintScreen("settings", "Settings")
     object Membership : FlintScreen("membership", "Membership")

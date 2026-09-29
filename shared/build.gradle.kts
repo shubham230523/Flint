@@ -29,14 +29,16 @@ if (localPropertiesFile.exists()) {
 }
 
 fun getSecret(key: String, envKey: String, defaultValue: String = ""): String {
+    val localProp = localProperties.getProperty(key)
+        ?: localProperties.getProperty(key.replace("flint.", ""))
+        ?: localProperties.getProperty(key.replace(".", "_"))
+    if (!localProp.isNullOrEmpty()) return localProp.trim()
+
     val envVal = System.getenv(envKey)
-    if (!envVal.isNullOrEmpty()) return envVal
+    if (!envVal.isNullOrEmpty()) return envVal.trim()
 
     val gradleProp = providers.gradleProperty(key).orNull
-    if (!gradleProp.isNullOrEmpty()) return gradleProp
-
-    val localProp = localProperties.getProperty(key)
-    if (!localProp.isNullOrEmpty()) return localProp
+    if (!gradleProp.isNullOrEmpty()) return gradleProp.trim()
 
     return defaultValue
 }

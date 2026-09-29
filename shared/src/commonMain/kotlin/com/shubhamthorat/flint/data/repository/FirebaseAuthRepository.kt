@@ -64,12 +64,23 @@ class FirebaseAuthRepository(
 ) : AuthRepository {
 
     private val tag = "FirebaseAuthRepository"
-    private val restUserFlow = MutableStateFlow<FlintUser?>(null)
+
+    private val initialTestUser: FlintUser? = if (com.shubhamthorat.flint.core.FlintBuildConfig.TEST_EMAIL.isNotBlank()) {
+        val email = com.shubhamthorat.flint.core.FlintBuildConfig.TEST_EMAIL.trim()
+        FlintUser(
+            id = "user_${email.hashCode()}",
+            email = email,
+            displayName = email.substringBefore('@'),
+            photoUrl = null
+        )
+    } else null
+
+    private val restUserFlow = MutableStateFlow<FlintUser?>(initialTestUser)
 
     override val currentUserFlow: Flow<FlintUser?>
         get() = try {
             Firebase.auth.authStateChanged.map { fbUser ->
-                fbUser?.toFlintUser()
+                fbUser?.toFlintUser() ?: restUserFlow.value
             }
         } catch (_: Throwable) {
             restUserFlow.asStateFlow()
@@ -77,7 +88,7 @@ class FirebaseAuthRepository(
 
     override suspend fun getCurrentUser(): FlintUser? {
         return try {
-            Firebase.auth.currentUser?.toFlintUser()
+            Firebase.auth.currentUser?.toFlintUser() ?: restUserFlow.value
         } catch (_: Throwable) {
             restUserFlow.value
         }

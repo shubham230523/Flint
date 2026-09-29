@@ -98,6 +98,12 @@ fun DashboardScreen(
                         variant = FlintButtonVariant.SECONDARY,
                         modifier = Modifier.weight(1f)
                     )
+                    FlintButton(
+                        onClick = { navigationManager.navigateTo(FlintScreen.CreatorDNA) },
+                        text = "🧬 Brand DNA",
+                        variant = FlintButtonVariant.OUTLINED,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }

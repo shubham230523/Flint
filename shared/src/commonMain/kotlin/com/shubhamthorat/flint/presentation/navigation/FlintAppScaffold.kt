@@ -42,8 +42,10 @@ fun FlintAppScaffold(
     val navItems = listOf(
         FlintScreen.Dashboard,
         FlintScreen.Create,
+        FlintScreen.YouTubeWorkspace,
         FlintScreen.ContentLibrary,
         FlintScreen.Campaigns,
+        FlintScreen.CreatorDNA,
         FlintScreen.Settings
     )
 
@@ -142,6 +144,8 @@ fun FlintAppScaffold(
                                         val mobileTitle = when (screen) {
                                             FlintScreen.Create -> "Create"
                                             FlintScreen.ContentLibrary -> "Library"
+                                            FlintScreen.YouTubeWorkspace -> "YouTube"
+                                            FlintScreen.CreatorDNA -> "Brand DNA"
                                             else -> screen.title
                                         }
                                         Text(
