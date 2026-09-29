@@ -143,8 +143,13 @@ class FirebaseAuthRepository(
     private suspend fun signInWithGoogleIdTokenRest(idToken: String): FlintResult<FlintUser, AppError> {
         val url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=$firebaseApiKey"
         return try {
+            val postPayload = if (idToken.startsWith("ya29.") || idToken.startsWith("1//")) {
+                "access_token=$idToken&providerId=google.com"
+            } else {
+                "id_token=$idToken&providerId=google.com"
+            }
             val requestBody = FirebaseAuthRestIdpRequest(
-                postBody = "id_token=$idToken&providerId=google.com",
+                postBody = postPayload,
                 requestUri = "http://localhost",
                 returnSecureToken = true
             )
