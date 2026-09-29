@@ -12,7 +12,9 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.shubhamthorat.flint.data.repository.FirebaseAuthRepository
 import com.shubhamthorat.flint.domain.model.FlintResult
@@ -47,15 +49,32 @@ class MainActivity : ComponentActivity() {
                         .setNonce(hashedNonce)
                         .build()
 
+                    val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(serverClientId = webClientId)
+                        .setNonce(hashedNonce)
+                        .build()
+
                     val request = GetCredentialRequest.Builder()
                         .addCredentialOption(googleIdOption)
+                        .addCredentialOption(signInWithGoogleOption)
                         .build()
 
                     try {
-                        val result = credentialManager.getCredential(
-                            context = context,
-                            request = request
-                        )
+                        val result = try {
+                            credentialManager.getCredential(
+                                context = context,
+                                request = request
+                            )
+                        } catch (_: GetCredentialException) {
+                            // Fallback specifically using GetSignInWithGoogleOption
+                            val fallbackRequest = GetCredentialRequest.Builder()
+                                .addCredentialOption(signInWithGoogleOption)
+                                .build()
+                            credentialManager.getCredential(
+                                context = context,
+                                request = fallbackRequest
+                            )
+                        }
+
                         val credential = result.credential
                         if (credential is CustomCredential &&
                             credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
