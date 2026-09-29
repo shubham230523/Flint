@@ -90,7 +90,7 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
             }
         }
 
-        val hasOAuth2 = js("typeof google !== 'undefined' && google.accounts && google.accounts.oauth2") as Boolean
+        val hasOAuth2 = js("typeof google !== 'undefined' && google.accounts && google.accounts.oauth2") == true
         if (hasOAuth2) {
             println("🌐 [FLINT_WEB] Initializing google.accounts.oauth2.initTokenClient with Client ID: $clientId")
             val tokenClientConfig = js("{}")
@@ -107,7 +107,7 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
             tokenClient.requestAccessToken(promptConfig)
         } else {
             println("⚠️ [FLINT_WEB] google.accounts.oauth2 not available, attempting google.accounts.id fallback...")
-            val hasGoogleId = js("typeof google !== 'undefined' && google.accounts && google.accounts.id") as Boolean
+            val hasGoogleId = js("typeof google !== 'undefined' && google.accounts && google.accounts.id") == true
             if (hasGoogleId) {
                 window.asDynamic().onGoogleSignInCallback = { response: dynamic ->
                     val token = response?.credential as? String

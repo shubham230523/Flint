@@ -6,6 +6,20 @@
     <title>Flint</title>
     <link type="text/css" rel="stylesheet" href="styles.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8HK_j6JqduOivNgtAFgdf5i4sqpB5Cxs",
+            authDomain: "flint-f14f2.firebaseapp.com",
+            projectId: "flint-f14f2",
+            storageBucket: "flint-f14f2.firebasestorage.app",
+            appId: "1:598190078606:web:9488890c82f6a107dc27df"
+        };
+        if (typeof firebase !== 'undefined' && (!firebase.apps || !firebase.apps.length)) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
 </head>
 <body style="text-align: center; align-content: center">
     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 50 50" role="presentation">
