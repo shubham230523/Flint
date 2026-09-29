@@ -288,7 +288,10 @@ class FirebaseAuthRepository(
             raw.contains("WEAK_PASSWORD", ignoreCase = true) -> "Password is too weak. Please use at least 6 characters."
             raw.contains("INVALID_EMAIL", ignoreCase = true) -> "Please enter a valid email address."
             raw.contains("USER_DISABLED", ignoreCase = true) -> "This user account has been disabled."
-            raw.contains("INVALID_IDP_RESPONSE", ignoreCase = true) -> "Invalid Google credential or expired ID token."
+            raw.contains("OPERATION_NOT_ALLOWED", ignoreCase = true) ->
+                "Google Sign-In is disabled in Firebase Console. Please enable 'Google' under Firebase Console > Authentication > Sign-in method."
+            raw.contains("INVALID_IDP_RESPONSE", ignoreCase = true) ->
+                "Invalid Google credential or Web Client ID mismatch."
             else -> raw.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }
         }
     }

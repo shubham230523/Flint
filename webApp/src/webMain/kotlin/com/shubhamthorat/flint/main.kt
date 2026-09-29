@@ -20,10 +20,23 @@ fun main() {
         App(
             authRepository = authRepository,
             onGoogleSignInClick = {
-                val token = requestGoogleTokenWeb(WEB_CLIENT_ID)
-                val result = authRepository.signInWithGoogleIdToken(token)
-                if (result is FlintResult.Error) {
-                    throw Exception(result.error.message)
+                println("🌐 [FLINT_WEB] User clicked 'Sign in with Google'")
+                try {
+                    val token = requestGoogleTokenWeb(WEB_CLIENT_ID)
+                    println("🌐 [FLINT_WEB] Obtained Google token (length=${token.length}). Authenticating with Firebase...")
+                    val result = authRepository.signInWithGoogleIdToken(token)
+                    when (result) {
+                        is FlintResult.Success -> {
+                            println("✅ [FLINT_WEB] Google Sign-In SUCCESS for user: ${result.data.email}")
+                        }
+                        is FlintResult.Error -> {
+                            println("❌ [FLINT_WEB] Firebase Google Auth Error: ${result.error.message}")
+                            throw Exception(result.error.message)
+                        }
+                    }
+                } catch (e: Exception) {
+                    println("🔴 [FLINT_WEB] Google Sign-In Exception: ${e.message}")
+                    throw e
                 }
             }
         )
@@ -35,6 +48,7 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
 
     try {
         window.asDynamic().onGoogleTokenClientCallback = { response: dynamic ->
+            println("🌐 [FLINT_WEB] Received Google OAuth Callback response: $response")
             if (response != null && response.error != null) {
                 val errCode = response.error as? String ?: "error"
                 val errDesc = response.error_description as? String ?: ""
@@ -45,6 +59,7 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
                 } else {
                     errCode
                 }
+                println("❌ [FLINT_WEB] Google OAuth Callback returned error: $fullMsg")
                 if (!deferred.isCompleted) {
                     deferred.completeExceptionally(Exception("Google Sign-In Error ($fullMsg)"))
                 }
@@ -53,10 +68,12 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
                 val idToken = response?.id_token as? String
                 val token = idToken ?: accessToken
                 if (!token.isNullOrBlank()) {
+                    println("✅ [FLINT_WEB] Successfully extracted token from Google Callback")
                     if (!deferred.isCompleted) {
                         deferred.complete(token)
                     }
                 } else {
+                    println("⚠️ [FLINT_WEB] Google Callback received but no token present")
                     if (!deferred.isCompleted) {
                         deferred.completeExceptionally(Exception("Google Sign-In popup was closed or dismissed."))
                     }
@@ -66,6 +83,7 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
 
         window.asDynamic().onGoogleTokenClientError = { err: dynamic ->
             val msg = err?.message as? String ?: err?.type as? String ?: "Google OAuth Initialization Error"
+            println("❌ [FLINT_WEB] Google OAuth Client Error: $msg")
             if (!deferred.isCompleted) {
                 deferred.completeExceptionally(Exception(msg))
             }
@@ -73,6 +91,7 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
 
         val hasOAuth2 = js("typeof google !== 'undefined' && google.accounts && google.accounts.oauth2") as Boolean
         if (hasOAuth2) {
+            println("🌐 [FLINT_WEB] Initializing google.accounts.oauth2.initTokenClient...")
             val tokenClient = js("""
                 google.accounts.oauth2.initTokenClient({
                     client_id: clientId,
@@ -83,6 +102,7 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
             """)
             tokenClient.requestAccessToken(js("({ prompt: 'select_account' })"))
         } else {
+            println("⚠️ [FLINT_WEB] google.accounts.oauth2 not available, attempting google.accounts.id fallback...")
             val hasGoogleId = js("typeof google !== 'undefined' && google.accounts && google.accounts.id") as Boolean
             if (hasGoogleId) {
                 window.asDynamic().onGoogleSignInCallback = { response: dynamic ->
@@ -110,16 +130,19 @@ private suspend fun requestGoogleTokenWeb(clientId: String): String {
                         val reason = notification?.asDynamic()?.getNotDisplayedReason()
                             ?: notification?.asDynamic()?.getSkippedReason()
                             ?: "prompt_dismissed"
+                        println("⚠️ [FLINT_WEB] google.accounts.id prompt suppressed: $reason")
                         if (!deferred.isCompleted) {
                             deferred.completeExceptionally(Exception("Google Sign-In prompt not displayed ($reason)"))
                         }
                     }
                 }
             } else {
+                println("❌ [FLINT_WEB] Google Identity Services script not loaded!")
                 deferred.completeExceptionally(Exception("Google Identity Services script not loaded. Check your internet connection."))
             }
         }
     } catch (e: Throwable) {
+        println("🔴 [FLINT_WEB] Exception in requestGoogleTokenWeb: ${e.message}")
         if (!deferred.isCompleted) {
             deferred.completeExceptionally(e)
         }
