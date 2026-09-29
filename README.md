@@ -2,9 +2,7 @@
 
 ### One spark. Endless stories.
 
-[![Live Web App](https://img.shields.io/badge/🌐_Live_Web_App-Try_Flint_Online-6366f1?style=for-the-badge)](https://shubham230523.github.io/Flint/)
-
-> **🌐 Live Web App**: [https://shubham230523.github.io/Flint/](https://shubham230523.github.io/Flint/)
+**🌐 Live Web App**: [https://shubham230523.github.io/Flint/](https://shubham230523.github.io/Flint/)
 
 Flint is a **Kotlin Multiplatform (KMP) & Compose Multiplatform** AI Content Operating System designed for creators. It transforms a single source idea or document into coordinated, platform-tailored content across LinkedIn, X (Twitter), Newsletters, YouTube, and Instagram Carousels.
 
