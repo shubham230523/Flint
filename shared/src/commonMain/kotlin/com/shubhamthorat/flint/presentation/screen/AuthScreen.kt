@@ -29,7 +29,6 @@ import com.shubhamthorat.flint.domain.repository.AuthRepository
 import com.shubhamthorat.flint.presentation.component.FlintButton
 import com.shubhamthorat.flint.presentation.component.FlintButtonVariant
 import com.shubhamthorat.flint.presentation.component.FlintCard
-import com.shubhamthorat.flint.presentation.component.FlintCircularProgressIndicator
 import com.shubhamthorat.flint.presentation.component.FlintTextField
 import com.shubhamthorat.flint.presentation.navigation.FlintScreen
 import com.shubhamthorat.flint.presentation.navigation.NavigationManager
@@ -198,20 +197,11 @@ fun AuthScreen(
                             }
                         }
                     },
-                    text = if (isLoading) "Processing..." else if (isSignUpMode) "✨ Create Account with Email" else "🔐 Sign In with Email",
+                    text = if (isSignUpMode) "✨ Create Account with Email" else "🔐 Sign In with Email",
                     variant = FlintButtonVariant.PRIMARY,
                     enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
                     modifier = Modifier.fillMaxWidth()
                 )
-
-                if (isLoading) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        FlintCircularProgressIndicator()
-                    }
-                }
             }
         }
     }
