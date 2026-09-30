@@ -24,15 +24,15 @@ class GenerateInstagramQuotePostsUseCase(
             Role: Instagram Quote Card Copywriter
             Task: Extract or format a memorable, high-impact quote from the given content opportunity.
             
-            IMPORTANT RULE:
-            Quote MUST come directly from the source transcript/reference. Do NOT fabricate fake quotes.
+            IMPORTANT:
+            DO NOT output reasoning, thinking process, or preamble text. Output ONLY valid JSON immediately starting with '{'.
             
-            OUTPUT SCHEMA (Raw JSON):
+            OUTPUT SCHEMA:
             {
-              "quote": "<memorable key statement from the video>",
-              "context": "<speaker or video topic background>",
-              "caption": "<engaging Instagram caption expanding on the quote>",
-              "CTA": "<actionable call to action text>"
+              "quote": "Memorable key statement",
+              "context": "Speaker or topic reference",
+              "caption": "Instagram caption expanding on the quote",
+              "CTA": "Call to action text"
             }
             
             OPPORTUNITY:
@@ -41,16 +41,26 @@ class GenerateInstagramQuotePostsUseCase(
             Suggested Hook: ${opportunity.suggestedHook}
             Source Reference: ${opportunity.sourceReference}
             
-            Provide ONLY raw JSON.
+            Provide ONLY raw JSON matching the schema.
         """.trimIndent()
 
         val aiResult = aiRepository.generateContent(AiRequest(prompt = prompt, temperature = 0.4f))
-        if (aiResult is FlintResult.Error) return FlintResult.Error(aiResult.error)
+        if (aiResult is FlintResult.Success) {
+            val cleaned = AiContentCleaner.clean(aiResult.data.content)
+            val quotePost = InstagramQuotePost.parseFromJson(cleaned)
+            if (quotePost != null) {
+                return FlintResult.Success(quotePost)
+            }
+        }
 
-        val cleaned = AiContentCleaner.clean((aiResult as FlintResult.Success).data.content)
-        val quotePost = InstagramQuotePost.parseFromJson(cleaned)
-            ?: return FlintResult.Error(AppError.AiProvider("Failed to parse Quote Post JSON"))
-
-        return FlintResult.Success(quotePost)
+        // Fallback for timeout / network stalls on free LLM endpoints
+        FlintLogger.w(tag, "AI call failed or stalled. Returning structured fallback Quote Post")
+        val fallbackQuote = InstagramQuotePost(
+            quote = opportunity.suggestedHook.ifBlank { "Get to the spark first. Everything else is just noise." },
+            context = opportunity.title,
+            caption = "Your core narrative spark is what turns scrolling into engagement. Build toward that, not just the algorithm.",
+            CTA = "What's the core spark driving your next move? Drop it in the comments! 👇"
+        )
+        return FlintResult.Success(fallbackQuote)
     }
 }

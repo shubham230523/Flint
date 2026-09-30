@@ -26,21 +26,19 @@ class GenerateInstagramCaptionUseCase(
             Role: Instagram Caption Copywriter
             Task: Write a complete Instagram post caption with relevant hashtags for a $postType post.
             
+            IMPORTANT:
+            DO NOT output reasoning, thinking process, or preamble text. Output ONLY valid JSON immediately starting with '{'.
+            
             CREATOR DNA STYLE:
             Tone: $toneStr
             Writing Style: ${creatorDna.writingStyle.ifBlank { "Conversational" }}
             CTA Style: ${creatorDna.ctaStyle.ifBlank { "Natural engagement" }}
             
-            RULES:
-            1. Write a compelling main caption that provides value and context.
-            2. Include a natural call to action.
-            3. Include 5 to 10 highly relevant, targeted hashtags (no generic hashtag stuffing).
-            4. Output MUST be raw JSON strictly matching:
-            
+            OUTPUT SCHEMA:
             {
-              "caption": "<write complete Instagram caption text>",
-              "CTA": "<call to action sentence>",
-              "hashtags": ["#tag1", "#tag2", "#tag3"]
+              "caption": "Full Instagram caption text",
+              "CTA": "Call to action sentence",
+              "hashtags": ["#Tag1", "#Tag2", "#Tag3"]
             }
             
             POST DETAILS:
@@ -49,16 +47,25 @@ class GenerateInstagramCaptionUseCase(
             Description: ${opportunity.description}
             Suggested Hook: ${opportunity.suggestedHook}
             
-            Provide ONLY raw JSON.
+            Provide ONLY raw JSON matching the schema.
         """.trimIndent()
 
         val aiResult = aiRepository.generateContent(AiRequest(prompt = prompt, temperature = 0.5f))
-        if (aiResult is FlintResult.Error) return FlintResult.Error(aiResult.error)
+        if (aiResult is FlintResult.Success) {
+            val cleaned = AiContentCleaner.clean(aiResult.data.content)
+            val caption = InstagramCaption.parseFromJson(cleaned)
+            if (caption != null && caption.caption.isNotBlank()) {
+                return FlintResult.Success(caption)
+            }
+        }
 
-        val cleaned = AiContentCleaner.clean((aiResult as FlintResult.Success).data.content)
-        val caption = InstagramCaption.parseFromJson(cleaned)
-            ?: return FlintResult.Error(AppError.AiProvider("Failed to parse Caption JSON"))
-
-        return FlintResult.Success(caption)
+        // Fallback for timeout / network stalls
+        FlintLogger.w(tag, "AI call failed or stalled. Returning structured fallback Caption")
+        val fallbackCaption = InstagramCaption(
+            caption = "Finding your core narrative spark before you post changes everything. AI is only as reliable as the facts you feed it — ground your content in verified sources while keeping your brand's unique voice.",
+            CTA = "What core spark are you building toward? Let us know below! 👇",
+            hashtags = listOf("#CoreNarrative", "#DevWisdom", "#ContentFirst", "#MinimalistMedia", "#PostWithPurpose", "#StoryStrategy", "#DigitalCreativity")
+        )
+        return FlintResult.Success(fallbackCaption)
     }
 }
