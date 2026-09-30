@@ -74,6 +74,7 @@ fun ContentLibraryScreen(
                 "All" -> true
                 else -> asset.platform.contains(selectedFilter, ignoreCase = true) ||
                         selectedFilter.contains(asset.platform, ignoreCase = true) ||
+                        (selectedFilter.contains("Instagram", ignoreCase = true) && (asset.platform.contains("Instagram", ignoreCase = true) || asset.type == ContentType.INSTAGRAM_CAPTION || asset.type == ContentType.REEL_SCRIPT)) ||
                         (selectedFilter.contains("X", ignoreCase = true) && asset.type == ContentType.X_THREAD) ||
                         (selectedFilter.contains("Newsletter", ignoreCase = true) && (asset.type == ContentType.NEWSLETTER || asset.type == ContentType.EMAIL))
             }
@@ -111,7 +112,7 @@ fun ContentLibraryScreen(
             horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val filters = listOf("All", "LinkedIn", "X (Twitter)", "Newsletter", "YouTube", "Carousel")
+            val filters = listOf("All", "Instagram", "LinkedIn", "X (Twitter)", "Newsletter", "YouTube", "Carousel")
             filters.forEach { filter ->
                 FlintChip(
                     selected = selectedFilter == filter,

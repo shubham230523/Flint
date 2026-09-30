@@ -72,7 +72,7 @@ fun CreateSparkScreen(
     val clipboardManager = LocalClipboardManager.current
 
     val selectedTypes = remember {
-        mutableStateListOf(ContentType.LINKEDIN_POST, ContentType.X_THREAD, ContentType.NEWSLETTER)
+        mutableStateListOf(ContentType.INSTAGRAM_CAPTION, ContentType.LINKEDIN_POST, ContentType.X_THREAD, ContentType.NEWSLETTER)
     }
 
     val coroutineScope = rememberCoroutineScope()
@@ -150,6 +150,7 @@ fun CreateSparkScreen(
                     horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.small)
                 ) {
                     val channels = listOf(
+                        ContentType.INSTAGRAM_CAPTION to "Instagram",
                         ContentType.LINKEDIN_POST to "LinkedIn",
                         ContentType.X_THREAD to "X (Twitter)",
                         ContentType.NEWSLETTER to "Newsletter",
