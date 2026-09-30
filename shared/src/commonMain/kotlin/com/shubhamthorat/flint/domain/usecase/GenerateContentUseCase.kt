@@ -86,7 +86,7 @@ class GenerateContentUseCase(
             ContentType.SHORT_SCRIPT, ContentType.REEL_SCRIPT -> "Shorts/Reels"
             ContentType.LINKEDIN_POST -> "LinkedIn"
             ContentType.X_THREAD -> "X (Twitter)"
-            ContentType.INSTAGRAM_CAPTION -> "Instagram"
+            ContentType.INSTAGRAM_CAPTION, ContentType.INSTAGRAM_REEL -> "Instagram"
             ContentType.CAROUSEL -> "Carousel"
             ContentType.NEWSLETTER, ContentType.EMAIL -> "Newsletter"
             ContentType.BLOG -> "Blog"
