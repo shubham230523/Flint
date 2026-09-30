@@ -64,13 +64,15 @@ class GeminiProvider(
 ) : AiProvider {
 
     val activeApiKey: String = apiKey?.takeIf { it.isNotEmpty() } ?: FlintBuildConfig.GEMINI_API_KEY
-    val activeModelName: String = modelName?.takeIf { it.isNotEmpty() } ?: "gemini-1.5-flash"
+    val activeModelName: String = normalizeModelName(
+        modelName?.takeIf { it.isNotEmpty() } ?: FlintBuildConfig.GEMINI_MODEL_NAME.ifEmpty { "gemini-2.0-flash" }
+    )
 
     override val providerName: String = "Gemini ($activeModelName)"
 
     override suspend fun generate(request: AiRequest): FlintResult<AiResponse, AppError> {
         val tag = "GeminiProvider"
-        val effectiveModel = request.modelName ?: activeModelName
+        val effectiveModel = normalizeModelName(request.modelName ?: activeModelName)
 
         if (activeApiKey.isBlank()) {
             FlintLogger.e(tag, "Gemini API key is missing")
@@ -234,6 +236,15 @@ class GeminiProvider(
     }
 
     companion object {
+        fun normalizeModelName(rawModel: String): String {
+            val trimmed = rawModel.trim()
+            return when (trimmed.lowercase()) {
+                "gemini-1.5-flash" -> "gemini-2.0-flash"
+                "gemini-3.5-flash-lite", "gemini-3.5-flash" -> "gemini-2.0-flash"
+                else -> if (trimmed.isBlank()) "gemini-2.0-flash" else trimmed
+            }
+        }
+
         private val jsonParser = Json {
             ignoreUnknownKeys = true
             isLenient = true

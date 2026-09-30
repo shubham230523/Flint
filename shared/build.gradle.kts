@@ -54,6 +54,9 @@ abstract class GenerateFlintBuildConfigTask : DefaultTask() {
     abstract val geminiApiKey: Property<String>
 
     @get:Input
+    abstract val geminiModelName: Property<String>
+
+    @get:Input
     abstract val testEmail: Property<String>
 
     @get:Input
@@ -78,6 +81,7 @@ abstract class GenerateFlintBuildConfigTask : DefaultTask() {
                 const val OPENROUTER_API_KEY: String = "${openRouterApiKey.get()}"
                 const val OPENROUTER_MODEL_NAME: String = "${openRouterModelName.get()}"
                 const val GEMINI_API_KEY: String = "${geminiApiKey.get()}"
+                const val GEMINI_MODEL_NAME: String = "${geminiModelName.get()}"
                 const val TEST_EMAIL: String = "${testEmail.get()}"
                 const val TEST_PASSWORD: String = "${testPassword.get()}"
             }
@@ -87,9 +91,10 @@ abstract class GenerateFlintBuildConfigTask : DefaultTask() {
 
 val generateFlintBuildConfig = tasks.register("generateFlintBuildConfig", GenerateFlintBuildConfigTask::class.java) {
     openRouterApiKey.set(getSecret("openrouter.api.key", "OPENROUTER_API_KEY", ""))
-    openRouterModelName.set(getSecret("openrouter.model.name", "OPENROUTER_MODEL_NAME", "anthropic/claude-3.5-sonnet"))
+    openRouterModelName.set(getSecret("openrouter.model.name", "OPENROUTER_MODEL_NAME", "google/gemini-2.0-flash-exp:free"))
     geminiApiKey.set(getSecret("gemini.api.key", "GEMINI_API_KEY", ""))
-    testEmail.set(getSecret("flint.test.email", "FLINT_TEST_EMAIL", "shubham230520011@gmail.com"))
+    geminiModelName.set(getSecret("gemini.model.name", "GEMINI_MODEL_NAME", "gemini-2.0-flash"))
+    testEmail.set(getSecret("flint.test.email", "FLINT_TEST_EMAIL", "shubhamthorat186@gmail.com"))
     testPassword.set(getSecret("flint.test.password", "FLINT_TEST_PASSWORD", "Dream123#"))
     outputDir.set(layout.buildDirectory.dir("generated/source/buildConfig/commonMain/kotlin/com/shubhamthorat/flint/core"))
 }

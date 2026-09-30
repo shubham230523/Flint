@@ -10,6 +10,7 @@ import com.shubhamthorat.flint.domain.repository.AiRequest
 import com.shubhamthorat.flint.domain.repository.ContentAsset
 import com.shubhamthorat.flint.domain.repository.ContentStatus
 import com.shubhamthorat.flint.domain.repository.ContentType
+import kotlinx.coroutines.flow.Flow
 import kotlin.random.Random
 
 class GenerateContentUseCase(
@@ -41,6 +42,18 @@ class GenerateContentUseCase(
             FlintLogger.i(tag, "Content asset successfully generated: ${asset.title} (ID: ${asset.id}) for platform ${asset.platform}")
             asset
         }
+    }
+
+    fun executeStream(
+        sourceText: String,
+        targetType: ContentType,
+        creatorDna: CreatorDNA = CreatorDNA()
+    ): Flow<FlintResult<String, AppError>> {
+        val tag = "GenerateContentUseCase[Stream]"
+        FlintLogger.i(tag, "Executing streaming content generation for targetType: ${targetType.name}")
+        val prompt = buildPrompt(sourceText, targetType, creatorDna)
+        val aiRequest = AiRequest(prompt = prompt)
+        return aiRepository.generateContentStream(aiRequest)
     }
 
     private fun buildPrompt(sourceText: String, targetType: ContentType, dna: CreatorDNA): String {

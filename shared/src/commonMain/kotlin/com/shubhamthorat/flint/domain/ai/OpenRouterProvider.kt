@@ -82,13 +82,15 @@ class OpenRouterProvider(
 ) : AiProvider {
 
     val activeApiKey: String = apiKey?.takeIf { it.isNotEmpty() } ?: FlintBuildConfig.OPENROUTER_API_KEY
-    val activeModelName: String = modelName?.takeIf { it.isNotEmpty() } ?: FlintBuildConfig.OPENROUTER_MODEL_NAME.ifEmpty { "anthropic/claude-3.5-sonnet" }
+    val activeModelName: String = normalizeModelName(
+        modelName?.takeIf { it.isNotEmpty() } ?: FlintBuildConfig.OPENROUTER_MODEL_NAME.ifEmpty { "google/gemini-2.0-flash-exp:free" }
+    )
 
     override val providerName: String = "OpenRouter ($activeModelName)"
 
     override suspend fun generate(request: AiRequest): FlintResult<AiResponse, AppError> {
         val tag = "OpenRouterProvider"
-        val effectiveModel = request.modelName ?: activeModelName
+        val effectiveModel = normalizeModelName(request.modelName ?: activeModelName)
 
         if (activeApiKey.isBlank()) {
             FlintLogger.e(tag, "OpenRouter API key is missing")
@@ -334,6 +336,14 @@ class OpenRouterProvider(
     }
 
     companion object {
+        fun normalizeModelName(rawModel: String): String {
+            val trimmed = rawModel.trim()
+            return when (trimmed.lowercase()) {
+                "gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-1.5-flash", "gemini-2.0-flash" -> "google/gemini-2.0-flash-exp:free"
+                else -> if (trimmed.isBlank()) "google/gemini-2.0-flash-exp:free" else trimmed
+            }
+        }
+
         private val jsonParser = Json {
             ignoreUnknownKeys = true
             isLenient = true
@@ -346,9 +356,9 @@ class OpenRouterProvider(
                     json(jsonParser)
                 }
                 install(io.ktor.client.plugins.HttpTimeout) {
-                    requestTimeoutMillis = 120_000L
-                    connectTimeoutMillis = 30_000L
-                    socketTimeoutMillis = 120_000L
+                    requestTimeoutMillis = 25_000L
+                    connectTimeoutMillis = 10_000L
+                    socketTimeoutMillis = 25_000L
                 }
             }
         }

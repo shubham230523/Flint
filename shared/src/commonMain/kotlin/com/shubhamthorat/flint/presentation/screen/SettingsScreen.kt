@@ -43,10 +43,13 @@ fun SettingsScreen(
     // Pre-fill from git-ignored local.properties or GitHub Actions secrets
     var openRouterApiKey by remember { mutableStateOf(FlintBuildConfig.OPENROUTER_API_KEY) }
     var openRouterModelName by remember {
-        mutableStateOf(FlintBuildConfig.OPENROUTER_MODEL_NAME.ifEmpty { "anthropic/claude-3.5-sonnet" })
+        mutableStateOf(FlintBuildConfig.OPENROUTER_MODEL_NAME.ifEmpty { "google/gemini-2.0-flash-exp:free" })
     }
 
     var geminiApiKey by remember { mutableStateOf(FlintBuildConfig.GEMINI_API_KEY) }
+    var geminiModelName by remember {
+        mutableStateOf(FlintBuildConfig.GEMINI_MODEL_NAME.ifEmpty { "gemini-2.0-flash" })
+    }
     var ollamaEndpointUrl by remember { mutableStateOf("https://ollama.cloud.local") }
 
     var isConfigSavedFeedbackVisible by remember { mutableStateOf(false) }
@@ -244,6 +247,38 @@ fun SettingsScreen(
                                 placeholder = "AIzaSy...",
                                 isPassword = true
                             )
+
+                            FlintTextField(
+                                value = geminiModelName,
+                                onValueChange = { geminiModelName = it },
+                                label = "Google Gemini Model Name",
+                                placeholder = "gemini-2.0-flash"
+                            )
+
+                            Text(
+                                text = "Popular Gemini Models:",
+                                style = FlintTheme.typography.labelSmall,
+                                color = FlintTheme.colors.textSecondary
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(FlintTheme.spacing.extraSmall)
+                            ) {
+                                val popularGeminiModels = listOf(
+                                    "gemini-2.0-flash",
+                                    "gemini-2.0-flash-lite",
+                                    "gemini-2.5-flash"
+                                )
+                                popularGeminiModels.forEach { model ->
+                                    FlintChip(
+                                        selected = geminiModelName == model,
+                                        onClick = { geminiModelName = model },
+                                        label = model
+                                    )
+                                }
+                            }
                         }
                     }
                     "Ollama Cloud" -> {

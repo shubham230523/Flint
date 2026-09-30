@@ -30,7 +30,8 @@ class AiTaskRouter(
             providers.filter { it.providerName.contains(preferred, ignoreCase = true) }
         } else emptyList()
 
-        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders else providers
+        val otherProviders = providers.filterNot { matchingProviders.contains(it) }
+        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders + otherProviders else providers
 
         FlintLogger.d(tag, "Target providers: ${targetProviders.map { it.providerName }}")
 
@@ -77,7 +78,8 @@ class AiTaskRouter(
             providers.filter { it.providerName.contains(preferred, ignoreCase = true) }
         } else emptyList()
 
-        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders else providers
+        val otherProviders = providers.filterNot { matchingProviders.contains(it) }
+        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders + otherProviders else providers
 
         for (provider in targetProviders) {
             if (!provider.isHealthy()) {
