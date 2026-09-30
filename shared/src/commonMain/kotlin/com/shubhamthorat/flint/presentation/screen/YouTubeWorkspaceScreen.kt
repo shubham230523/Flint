@@ -90,6 +90,7 @@ fun YouTubeWorkspaceScreen(
 
     // Generation State
     var isGeneratingAsset by remember { mutableStateOf(false) }
+    var assetGenerationJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var generatedAssetTitle by remember { mutableStateOf("") }
     var generatedAssetBody by remember { mutableStateOf("") }
     var generatedAssetType by remember { mutableStateOf(ContentType.REEL_SCRIPT) }
@@ -202,23 +203,27 @@ fun YouTubeWorkspaceScreen(
     }
 
     fun generateAssetForOpportunity(opp: InstagramContentOpportunity) {
+        assetGenerationJob?.cancel()
         isGeneratingAsset = true
         showGeneratedModal = true
-        generatedAssetTitle = "Generating ${opp.title}..."
-        generatedAssetBody = "Flint AI is shaping your Instagram content..."
+        generatedAssetTitle = "Shaping Your ${opp.type.name.replace('_', ' ')}..."
+        generatedAssetBody = ""
 
-        coroutineScope.launch {
+        assetGenerationJob = coroutineScope.launch {
+            var titleResult = opp.title
+            var mainContentStr = ""
+
             when (opp.type) {
                 OpportunityType.REEL_IDEA -> {
                     generatedAssetType = ContentType.REEL_SCRIPT
                     when (val res = reelUseCase.execute(opp, creatorDna)) {
                         is FlintResult.Success -> {
                             val r = res.data
-                            generatedAssetTitle = opp.title
-                            generatedAssetBody = "🎬 HOOK:\n${r.hook}\n\n📹 SCRIPT:\n${r.body}\n\n✨ ENDING:\n${r.ending}\n\n📣 CTA:\n${r.CTA}\n\n⏱️ Duration: ${r.suggestedDuration}"
+                            titleResult = opp.title
+                            mainContentStr = "🎬 HOOK:\n${r.hook}\n\n📹 SCRIPT:\n${r.body}\n\n✨ ENDING:\n${r.ending}\n\n📣 CTA:\n${r.CTA}\n\n⏱️ Duration: ${r.suggestedDuration}"
                         }
                         is FlintResult.Error -> {
-                            generatedAssetBody = "Error generating Reel: ${res.error.message}"
+                            mainContentStr = "Error generating Reel: ${res.error.message}"
                         }
                     }
                 }
@@ -227,12 +232,12 @@ fun YouTubeWorkspaceScreen(
                     when (val res = carouselUseCase.execute(opp, creatorDna)) {
                         is FlintResult.Success -> {
                             val c = res.data
-                            generatedAssetTitle = c.title
+                            titleResult = c.title
                             val slidesStr = c.slides.joinToString("\n\n") { "Slide ${it.slideNumber}: ${it.headline}\n${it.body}" }
-                            generatedAssetBody = "🎠 CAROUSEL SLIDES:\n\n$slidesStr"
+                            mainContentStr = "🎠 CAROUSEL SLIDES:\n\n$slidesStr"
                         }
                         is FlintResult.Error -> {
-                            generatedAssetBody = "Error generating Carousel: ${res.error.message}"
+                            mainContentStr = "Error generating Carousel: ${res.error.message}"
                         }
                     }
                 }
@@ -241,12 +246,12 @@ fun YouTubeWorkspaceScreen(
                     when (val res = storyUseCase.execute(opp, creatorDna)) {
                         is FlintResult.Success -> {
                             val s = res.data
-                            generatedAssetTitle = s.title
+                            titleResult = s.title
                             val framesStr = s.stories.joinToString("\n\n") { "Frame ${it.sequenceNumber}: ${it.headline}\n${it.body}\n💡 Interactive: ${it.interactionSuggestion}\n📣 CTA: ${it.CTA}" }
-                            generatedAssetBody = "📱 STORY SEQUENCE:\n\n$framesStr"
+                            mainContentStr = "📱 STORY SEQUENCE:\n\n$framesStr"
                         }
                         is FlintResult.Error -> {
-                            generatedAssetBody = "Error generating Story sequence: ${res.error.message}"
+                            mainContentStr = "Error generating Story sequence: ${res.error.message}"
                         }
                     }
                 }
@@ -255,24 +260,32 @@ fun YouTubeWorkspaceScreen(
                     when (val res = quoteUseCase.execute(opp, creatorDna)) {
                         is FlintResult.Success -> {
                             val q = res.data
-                            generatedAssetTitle = "Quote Post — ${opp.title}"
-                            generatedAssetBody = "💬 QUOTE CARD:\n\"${q.quote}\"\n\nContext: ${q.context}\n\n📝 CAPTION:\n${q.caption}\n\n📣 CTA:\n${q.CTA}"
+                            titleResult = "Quote Post — ${opp.title}"
+                            mainContentStr = "💬 QUOTE CARD:\n\"${q.quote}\"\n\nContext: ${q.context}\n\n📝 CAPTION:\n${q.caption}\n\n📣 CTA:\n${q.CTA}"
                         }
                         is FlintResult.Error -> {
-                            generatedAssetBody = "Error generating Quote post: ${res.error.message}"
+                            mainContentStr = "Error generating Quote post: ${res.error.message}"
                         }
                     }
                 }
             }
+
             // Append generated caption as value-add
+            var captionStr = ""
             when (val capRes = captionUseCase.execute(opp.type.name, opp, creatorDna)) {
                 is FlintResult.Success -> {
                     val cap = capRes.data
                     val tagsStr = cap.hashtags.joinToString(" ")
-                    generatedAssetBody += "\n\n📝 CAPTION & HASHTAGS:\n${cap.caption}\n\n${cap.CTA}\n\n$tagsStr"
+                    if (cap.caption.isNotBlank()) {
+                        captionStr = "\n\n📝 CAPTION & HASHTAGS:\n${cap.caption}\n\n${cap.CTA}\n\n$tagsStr"
+                    }
                 }
                 else -> {}
             }
+
+            // ATOMIC UPDATE: Only update dialog content once ALL AI operations are 100% finished
+            generatedAssetTitle = titleResult
+            generatedAssetBody = mainContentStr + captionStr
             isGeneratingAsset = false
         }
     }
@@ -560,13 +573,23 @@ fun YouTubeWorkspaceScreen(
     // Modal Dialog for Generated Content Preview & Save
     if (showGeneratedModal) {
         FlintAlertDialog(
-            onDismissRequest = { showGeneratedModal = false },
-            title = generatedAssetTitle,
+            onDismissRequest = {
+                assetGenerationJob?.cancel()
+                isGeneratingAsset = false
+                showGeneratedModal = false
+            },
+            title = if (isGeneratingAsset) "Generating Post..." else generatedAssetTitle,
             text = generatedAssetBody,
-            confirmButtonText = "Save to Content Library 💾",
-            onConfirm = { saveGeneratedAsset() },
-            dismissButtonText = "Close",
-            onDismiss = { showGeneratedModal = false }
+            isLoading = isGeneratingAsset,
+            loadingMessage = "Flint AI is shaping your post, caption & hashtags...",
+            confirmButtonText = if (isGeneratingAsset) null else "Save to Content Library 💾",
+            onConfirm = if (isGeneratingAsset) null else { { saveGeneratedAsset() } },
+            dismissButtonText = if (isGeneratingAsset) "Cancel" else "Close",
+            onDismiss = {
+                assetGenerationJob?.cancel()
+                isGeneratingAsset = false
+                showGeneratedModal = false
+            }
         )
     }
 }
