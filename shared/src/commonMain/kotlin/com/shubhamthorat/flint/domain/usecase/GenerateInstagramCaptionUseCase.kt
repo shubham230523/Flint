@@ -38,9 +38,9 @@ class GenerateInstagramCaptionUseCase(
             4. Output MUST be raw JSON strictly matching:
             
             {
-              "caption": "Full Instagram caption text",
-              "CTA": "Call to action sentence",
-              "hashtags": ["#Tag1", "#Tag2", "#Tag3"]
+              "caption": "<write complete Instagram caption text>",
+              "CTA": "<call to action sentence>",
+              "hashtags": ["#tag1", "#tag2", "#tag3"]
             }
             
             POST DETAILS:

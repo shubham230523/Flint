@@ -1,10 +1,16 @@
 package com.shubhamthorat.flint.presentation.component
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.shubhamthorat.flint.presentation.theme.FlintTheme
 
 @Composable
@@ -25,7 +31,18 @@ fun FlintAlertDialog(
             Text(text = title, style = FlintTheme.typography.headlineMedium)
         },
         text = {
-            Text(text = text, style = FlintTheme.typography.bodyLarge)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = text,
+                    style = FlintTheme.typography.bodyLarge,
+                    color = FlintTheme.colors.onSurface
+                )
+            }
         },
         confirmButton = {
             FlintButton(

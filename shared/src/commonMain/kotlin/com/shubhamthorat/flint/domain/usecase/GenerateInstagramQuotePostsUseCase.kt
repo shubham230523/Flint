@@ -29,10 +29,10 @@ class GenerateInstagramQuotePostsUseCase(
             
             OUTPUT SCHEMA (Raw JSON):
             {
-              "quote": "Exact or verbatim key statement",
-              "context": "Context or speaker reference",
-              "caption": "Accompanying Instagram caption expanding on the quote",
-              "CTA": "Call to action text"
+              "quote": "<memorable key statement from the video>",
+              "context": "<speaker or video topic background>",
+              "caption": "<engaging Instagram caption expanding on the quote>",
+              "CTA": "<actionable call to action text>"
             }
             
             OPPORTUNITY:

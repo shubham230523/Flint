@@ -7,10 +7,10 @@ import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class InstagramReelContent(
-    val hook: String,
-    val body: String,
-    val ending: String,
-    val CTA: String,
+    val hook: String = "",
+    val body: String = "",
+    val ending: String = "",
+    val CTA: String = "",
     val suggestedDuration: String = "30-45s"
 ) {
     companion object {
@@ -41,6 +41,30 @@ data class InstagramReelContent(
                 }
             } catch (_: Exception) {}
 
+            // Tier 3: Regex Extractor
+            try {
+                val hook = LenientJsonParser.regexExtractString(rawJson, "hook", "openingHook")
+                val body = LenientJsonParser.regexExtractString(rawJson, "body", "script")
+                val ending = LenientJsonParser.regexExtractString(rawJson, "ending", "outro")
+                val cta = LenientJsonParser.regexExtractString(rawJson, "CTA", "cta")
+                if (hook.isNotBlank() || body.isNotBlank()) {
+                    return InstagramReelContent(hook = hook, body = body, ending = ending, CTA = cta)
+                }
+            } catch (_: Exception) {}
+
+            // Tier 4: Plain Markdown Fallback
+            if (rawJson.isNotBlank()) {
+                val lines = rawJson.lines().filter { it.isNotBlank() && !it.startsWith("```") }
+                if (lines.isNotEmpty()) {
+                    return InstagramReelContent(
+                        hook = lines.first(),
+                        body = lines.drop(1).joinToString("\n"),
+                        ending = "Follow for more insights!",
+                        CTA = "Save & Share this Reel!"
+                    )
+                }
+            }
+
             return null
         }
     }
@@ -48,14 +72,14 @@ data class InstagramReelContent(
 
 @Serializable
 data class InstagramCarouselSlide(
-    val slideNumber: Int,
-    val headline: String,
-    val body: String
+    val slideNumber: Int = 1,
+    val headline: String = "",
+    val body: String = ""
 )
 
 @Serializable
 data class InstagramCarousel(
-    val title: String,
+    val title: String = "",
     val slides: List<InstagramCarouselSlide> = emptyList()
 ) {
     companion object {
@@ -87,6 +111,16 @@ data class InstagramCarousel(
                 }
             } catch (_: Exception) {}
 
+            // Tier 4: Plain Markdown Fallback
+            if (rawJson.isNotBlank()) {
+                val slides = LenientJsonParser.markdownExtractSection(rawJson, "slide", "slides", "page").mapIndexed { idx, text ->
+                    InstagramCarouselSlide(slideNumber = idx + 1, headline = "Slide ${idx + 1}", body = text)
+                }
+                if (slides.isNotEmpty()) {
+                    return InstagramCarousel(title = "Instagram Carousel", slides = slides)
+                }
+            }
+
             return null
         }
     }
@@ -94,16 +128,16 @@ data class InstagramCarousel(
 
 @Serializable
 data class InstagramStory(
-    val sequenceNumber: Int,
-    val headline: String,
-    val body: String,
+    val sequenceNumber: Int = 1,
+    val headline: String = "",
+    val body: String = "",
     val interactionSuggestion: String = "",
     val CTA: String = ""
 )
 
 @Serializable
 data class InstagramStorySequence(
-    val title: String,
+    val title: String = "",
     val stories: List<InstagramStory> = emptyList()
 ) {
     companion object {
@@ -137,6 +171,16 @@ data class InstagramStorySequence(
                 }
             } catch (_: Exception) {}
 
+            // Tier 4: Plain Markdown Fallback
+            if (rawJson.isNotBlank()) {
+                val frames = LenientJsonParser.markdownExtractSection(rawJson, "frame", "story", "stories").mapIndexed { idx, text ->
+                    InstagramStory(sequenceNumber = idx + 1, headline = "Frame ${idx + 1}", body = text)
+                }
+                if (frames.isNotEmpty()) {
+                    return InstagramStorySequence(title = "Instagram Story Sequence", stories = frames)
+                }
+            }
+
             return null
         }
     }
@@ -144,10 +188,10 @@ data class InstagramStorySequence(
 
 @Serializable
 data class InstagramQuotePost(
-    val quote: String,
-    val context: String,
-    val caption: String,
-    val CTA: String
+    val quote: String = "",
+    val context: String = "",
+    val caption: String = "",
+    val CTA: String = ""
 ) {
     companion object {
         fun parseFromJson(rawJson: String): InstagramQuotePost? {
@@ -162,7 +206,7 @@ data class InstagramQuotePost(
                     val quote = LenientJsonParser.extractString(elem, "quote", "text", "statement")
                     val context = LenientJsonParser.extractString(elem, "context", "background")
                     val caption = LenientJsonParser.extractString(elem, "caption", "body")
-                    val cta = LenientJsonParser.extractString(elem, "CTA", "cta")
+                    val cta = LenientJsonParser.extractString(elem, "CTA", "cta", "callToAction")
 
                     if (quote.isNotBlank() || caption.isNotBlank()) {
                         return InstagramQuotePost(
@@ -175,6 +219,31 @@ data class InstagramQuotePost(
                 }
             } catch (_: Exception) {}
 
+            // Tier 3: Regex Extractor
+            try {
+                val quote = LenientJsonParser.regexExtractString(rawJson, "quote", "text")
+                val context = LenientJsonParser.regexExtractString(rawJson, "context", "background")
+                val caption = LenientJsonParser.regexExtractString(rawJson, "caption", "body")
+                val cta = LenientJsonParser.regexExtractString(rawJson, "CTA", "cta")
+
+                if (quote.isNotBlank() || caption.isNotBlank()) {
+                    return InstagramQuotePost(quote = quote, context = context, caption = caption, CTA = cta)
+                }
+            } catch (_: Exception) {}
+
+            // Tier 4: Plain Markdown Fallback
+            if (rawJson.isNotBlank()) {
+                val lines = rawJson.lines().filter { it.isNotBlank() && !it.startsWith("```") }
+                if (lines.isNotEmpty()) {
+                    return InstagramQuotePost(
+                        quote = lines.firstOrNull { it.contains("quote", ignoreCase = true) }?.substringAfter(":")?.trim() ?: lines.first(),
+                        context = "Video Context",
+                        caption = lines.getOrNull(1) ?: "",
+                        CTA = "Save this quote!"
+                    )
+                }
+            }
+
             return null
         }
     }
@@ -182,8 +251,8 @@ data class InstagramQuotePost(
 
 @Serializable
 data class InstagramCaption(
-    val caption: String,
-    val CTA: String,
+    val caption: String = "",
+    val CTA: String = "",
     val hashtags: List<String> = emptyList()
 ) {
     companion object {
@@ -197,7 +266,7 @@ data class InstagramCaption(
                 val elem = LenientJsonParser.lenientJson.parseToJsonElement(sanitized)
                 if (elem is JsonObject) {
                     val cap = LenientJsonParser.extractString(elem, "caption", "text", "body")
-                    val cta = LenientJsonParser.extractString(elem, "CTA", "cta")
+                    val cta = LenientJsonParser.extractString(elem, "CTA", "cta", "callToAction")
                     val tags = LenientJsonParser.extractStringList(elem, "hashtags", "tags")
 
                     if (cap.isNotBlank()) {
@@ -209,6 +278,25 @@ data class InstagramCaption(
                     }
                 }
             } catch (_: Exception) {}
+
+            // Tier 3: Regex Extractor
+            try {
+                val cap = LenientJsonParser.regexExtractString(rawJson, "caption", "text")
+                val cta = LenientJsonParser.regexExtractString(rawJson, "CTA", "cta")
+                val tags = LenientJsonParser.regexExtractStringList(rawJson, "hashtags", "tags")
+                if (cap.isNotBlank()) {
+                    return InstagramCaption(caption = cap, CTA = cta, hashtags = tags)
+                }
+            } catch (_: Exception) {}
+
+            // Tier 4: Plain Markdown Fallback
+            if (rawJson.isNotBlank()) {
+                val tags = Regex("""#\w+""").findAll(rawJson).map { it.value }.toList()
+                val text = rawJson.replace(Regex("""#\w+"""), "").trim()
+                if (text.isNotBlank()) {
+                    return InstagramCaption(caption = text, CTA = "Follow for more!", hashtags = tags)
+                }
+            }
 
             return null
         }

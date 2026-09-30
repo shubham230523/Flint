@@ -151,6 +151,7 @@ class OpenRouterProvider(
                             val chunkText = extractTextFromChoice(choice)
                             if (!chunkText.isNullOrEmpty()) {
                                 sb.append(chunkText)
+                                FlintLogger.i(tag, "Streaming Token Chunk: \"$chunkText\"")
                             }
                         } catch (e: Exception) {
                             FlintLogger.w(tag, "Could not parse OpenRouter SSE chunk: $data | ${e.message}")
@@ -245,9 +246,7 @@ class OpenRouterProvider(
                             if (!chunkText.isNullOrEmpty()) {
                                 sb.append(chunkText)
                                 chunkCount++
-                                if (chunkCount % 5 == 0 || sb.length < 100) {
-                                    FlintLogger.d(tag, "Stream chunk #$chunkCount (${chunkText.length} chars) | Total buffer: ${sb.length} chars")
-                                }
+                                FlintLogger.i(tag, "Stream Chunk #$chunkCount: \"$chunkText\"")
                                 emit(FlintResult.Success(sb.toString()))
                                 hasEmitted = true
                             }
