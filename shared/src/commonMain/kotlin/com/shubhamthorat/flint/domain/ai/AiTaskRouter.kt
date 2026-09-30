@@ -7,7 +7,6 @@ import com.shubhamthorat.flint.domain.repository.AiRepository
 import com.shubhamthorat.flint.domain.repository.AiRequest
 import com.shubhamthorat.flint.domain.repository.AiResponse
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 
 class AiTaskRouter(
@@ -30,8 +29,7 @@ class AiTaskRouter(
             providers.filter { it.providerName.contains(preferred, ignoreCase = true) }
         } else emptyList()
 
-        val otherProviders = providers.filterNot { matchingProviders.contains(it) }
-        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders + otherProviders else providers
+        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders else providers
 
         FlintLogger.d(tag, "Target providers: ${targetProviders.map { it.providerName }}")
 
@@ -78,8 +76,9 @@ class AiTaskRouter(
             providers.filter { it.providerName.contains(preferred, ignoreCase = true) }
         } else emptyList()
 
-        val otherProviders = providers.filterNot { matchingProviders.contains(it) }
-        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders + otherProviders else providers
+        val targetProviders = if (matchingProviders.isNotEmpty()) matchingProviders else providers
+
+        var lastError: AppError? = null
 
         for (provider in targetProviders) {
             if (!provider.isHealthy()) {
@@ -87,11 +86,31 @@ class AiTaskRouter(
                 continue
             }
             FlintLogger.i(tag, "Initiating stream flow with provider: ${provider.providerName}")
-            emitAll(provider.generateStream(request))
-            return@flow
+
+            var providerSucceeded = false
+            provider.generateStream(request).collect { result ->
+                when (result) {
+                    is FlintResult.Success -> {
+                        providerSucceeded = true
+                        emit(result)
+                    }
+                    is FlintResult.Error -> {
+                        lastError = result.error
+                        FlintLogger.w(tag, "Provider ${provider.providerName} stream failed: ${result.error.message}")
+                    }
+                }
+            }
+
+            if (providerSucceeded) {
+                FlintLogger.i(tag, "Streaming SUCCESS with ${provider.providerName}")
+                return@flow
+            }
+
+            FlintLogger.w(tag, "Streaming failed with ${provider.providerName}. Falling back to next provider...")
         }
 
-        FlintLogger.e(tag, "All target streaming AI providers failed")
-        emit(FlintResult.Error(AppError.AiProvider("Configured streaming AI provider failed")))
+        val finalError = lastError ?: AppError.AiProvider("Configured streaming AI provider failed")
+        FlintLogger.e(tag, "All target streaming AI providers failed: ${finalError.message}")
+        emit(FlintResult.Error(finalError))
     }
 }

@@ -91,7 +91,7 @@ abstract class GenerateFlintBuildConfigTask : DefaultTask() {
 
 val generateFlintBuildConfig = tasks.register("generateFlintBuildConfig", GenerateFlintBuildConfigTask::class.java) {
     openRouterApiKey.set(getSecret("openrouter.api.key", "OPENROUTER_API_KEY", ""))
-    openRouterModelName.set(getSecret("openrouter.model.name", "OPENROUTER_MODEL_NAME", "google/gemini-2.0-flash-exp:free"))
+    openRouterModelName.set(getSecret("openrouter.model.name", "OPENROUTER_MODEL_NAME", "nvidia/nemotron-3.5-lightning:free"))
     geminiApiKey.set(getSecret("gemini.api.key", "GEMINI_API_KEY", ""))
     geminiModelName.set(getSecret("gemini.model.name", "GEMINI_MODEL_NAME", "gemini-2.0-flash"))
     testEmail.set(getSecret("flint.test.email", "FLINT_TEST_EMAIL", "shubhamthorat186@gmail.com"))

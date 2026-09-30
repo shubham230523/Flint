@@ -255,6 +255,8 @@ class OpenRouterProvider(
                 stream = true
             )
 
+            FlintLogger.i(tag, "Connecting to OpenRouter SSE stream | Model: $effectiveModel | Timeout limit: 300s")
+
             val statement = httpClient.preparePost("https://openrouter.ai/api/v1/chat/completions") {
                 contentType(ContentType.Application.Json)
                 header(HttpHeaders.Authorization, "Bearer $activeApiKey")
@@ -273,15 +275,20 @@ class OpenRouterProvider(
                     return@execute
                 }
 
+                FlintLogger.i(tag, "OpenRouter SSE stream connected! Waiting for $effectiveModel tokens...")
                 val channel = httpResponse.bodyAsChannel()
                 val sb = StringBuilder()
+                var chunkCount = 0
 
                 while (!channel.isClosedForRead) {
                     val line = channel.readUTF8Line() ?: break
                     val trimmed = line.trim()
                     if (trimmed.startsWith("data:")) {
                         val data = trimmed.removePrefix("data:").trim()
-                        if (data == "[DONE]") break
+                        if (data == "[DONE]") {
+                            FlintLogger.i(tag, "Received [DONE] signal from OpenRouter SSE stream. Total chars: ${sb.length}")
+                            break
+                        }
                         if (data.isBlank()) continue
 
                         try {
@@ -290,6 +297,10 @@ class OpenRouterProvider(
                             val chunkText = extractTextFromChoice(choice)
                             if (!chunkText.isNullOrEmpty()) {
                                 sb.append(chunkText)
+                                chunkCount++
+                                if (chunkCount % 5 == 0 || sb.length < 100) {
+                                    FlintLogger.d(tag, "Stream chunk #$chunkCount (${chunkText.length} chars) | Total buffer: ${sb.length} chars")
+                                }
                                 emit(FlintResult.Success(sb.toString()))
                                 hasEmitted = true
                             }
@@ -338,10 +349,7 @@ class OpenRouterProvider(
     companion object {
         fun normalizeModelName(rawModel: String): String {
             val trimmed = rawModel.trim()
-            return when (trimmed.lowercase()) {
-                "gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-1.5-flash", "gemini-2.0-flash" -> "google/gemini-2.0-flash-exp:free"
-                else -> if (trimmed.isBlank()) "google/gemini-2.0-flash-exp:free" else trimmed
-            }
+            return if (trimmed.isBlank()) "nvidia/nemotron-3.5-lightning:free" else trimmed
         }
 
         private val jsonParser = Json {
@@ -356,9 +364,9 @@ class OpenRouterProvider(
                     json(jsonParser)
                 }
                 install(io.ktor.client.plugins.HttpTimeout) {
-                    requestTimeoutMillis = 25_000L
-                    connectTimeoutMillis = 10_000L
-                    socketTimeoutMillis = 25_000L
+                    requestTimeoutMillis = 300_000L
+                    connectTimeoutMillis = 60_000L
+                    socketTimeoutMillis = 300_000L
                 }
             }
         }

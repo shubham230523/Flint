@@ -157,30 +157,40 @@ fun YouTubeWorkspaceScreen(
                             val procData = procRes.data
                             processingResult = procData
 
-                            // Step C: AI Video Analysis
+                            // Step C: AI Video Analysis (Streaming)
                             loadingMessage = "Finding Instagram-worthy moments..."
-                            when (val anaRes = analyzeUseCase.execute(procData, creatorDna)) {
+                            var analysisResult: FlintResult<YouTubeContentAnalysis, com.shubhamthorat.flint.domain.model.AppError>? = null
+
+                            analyzeUseCase.executeStream(
+                                processingResult = procData,
+                                creatorDna = creatorDna,
+                                onChunkReceived = { text ->
+                                    loadingMessage = "Understanding video... (${text.length} chars streamed)"
+                                }
+                            ).collect { streamRes ->
+                                analysisResult = streamRes
+                            }
+
+                            val anaRes = analysisResult ?: FlintResult.Error(com.shubhamthorat.flint.domain.model.AppError.AiProvider("Analysis failed"))
+                            if (anaRes is FlintResult.Error) {
+                                errorMessage = anaRes.error.message
+                                currentStep = YouTubeWorkflowStep.URL_INPUT
+                                return@launch
+                            }
+
+                            val analysis = (anaRes as FlintResult.Success).data
+                            contentAnalysis = analysis
+
+                            // Step D: Discover Instagram Opportunities
+                            loadingMessage = "Shaping your next posts..."
+                            when (val oppRes = opportunitiesUseCase.execute(analysis, creatorDna)) {
                                 is FlintResult.Error -> {
-                                    errorMessage = anaRes.error.message
+                                    errorMessage = oppRes.error.message
                                     currentStep = YouTubeWorkflowStep.URL_INPUT
-                                    return@launch
                                 }
                                 is FlintResult.Success -> {
-                                    val analysis = anaRes.data
-                                    contentAnalysis = analysis
-
-                                    // Step D: Discover Instagram Opportunities
-                                    loadingMessage = "Shaping your next posts..."
-                                    when (val oppRes = opportunitiesUseCase.execute(analysis, creatorDna)) {
-                                        is FlintResult.Error -> {
-                                            errorMessage = oppRes.error.message
-                                            currentStep = YouTubeWorkflowStep.URL_INPUT
-                                        }
-                                        is FlintResult.Success -> {
-                                            opportunities = oppRes.data
-                                            currentStep = YouTubeWorkflowStep.OPPORTUNITIES_VIEW
-                                        }
-                                    }
+                                    opportunities = oppRes.data
+                                    currentStep = YouTubeWorkflowStep.OPPORTUNITIES_VIEW
                                 }
                             }
                         }

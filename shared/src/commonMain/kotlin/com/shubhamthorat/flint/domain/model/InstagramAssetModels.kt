@@ -10,9 +10,7 @@ private val json = Json {
 }
 
 private fun cleanJsonString(raw: String): String {
-    return raw.replace(Regex("""^```(?:json)?\s*""", RegexOption.IGNORE_CASE), "")
-        .replace(Regex("""\s*```$"""), "")
-        .trim()
+    return com.shubhamthorat.flint.domain.ai.LenientJsonParser.sanitize(raw)
 }
 
 @Serializable

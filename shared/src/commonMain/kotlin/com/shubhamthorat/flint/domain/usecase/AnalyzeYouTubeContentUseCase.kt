@@ -34,7 +34,7 @@ class AnalyzeYouTubeContentUseCase(
         val aiRequest = AiRequest(
             prompt = prompt,
             temperature = 0.3f, // low temperature for precise factual extraction
-            maxTokens = 2048
+            maxTokens = 4096
         )
 
         val aiResult = aiRepository.generateContent(aiRequest)
@@ -58,6 +58,69 @@ class AnalyzeYouTubeContentUseCase(
         return FlintResult.Success(parsedAnalysis)
     }
 
+    fun executeStream(
+        processingResult: YouTubeSourceProcessingResult,
+        creatorDna: CreatorDNA = CreatorDNA(),
+        onChunkReceived: ((String) -> Unit)? = null
+    ): kotlinx.coroutines.flow.Flow<FlintResult<YouTubeContentAnalysis, AppError>> = kotlinx.coroutines.flow.flow {
+        val tag = "AnalyzeYouTubeContentUseCase[Stream]"
+        val video = processingResult.videoData
+        val transcriptText = processingResult.transcript.getFormattedTranscript()
+
+        FlintLogger.i(tag, "Executing streaming YouTube content analysis for videoId: ${video.videoId} (${video.title}) | Transcript len: ${transcriptText.length} chars")
+
+        val prompt = buildAnalysisPrompt(
+            title = video.title,
+            channel = video.channelName,
+            description = video.description,
+            transcript = transcriptText,
+            creatorDna = creatorDna
+        )
+
+        FlintLogger.d(tag, "Built AI Analysis Prompt | Prompt len: ${prompt.length} chars")
+
+        val aiRequest = AiRequest(
+            prompt = prompt,
+            temperature = 0.3f,
+            maxTokens = 4096
+        )
+
+        var accumulated = ""
+        var lastError: AppError? = null
+
+        aiRepository.generateContentStream(aiRequest).collect { chunkResult ->
+            when (chunkResult) {
+                is FlintResult.Success -> {
+                    accumulated = chunkResult.data
+                    FlintLogger.d(tag, "Analysis Stream Progress: ${accumulated.length} chars received")
+                    onChunkReceived?.invoke(accumulated)
+                }
+                is FlintResult.Error -> {
+                    lastError = chunkResult.error
+                    FlintLogger.w(tag, "Analysis Stream Error: ${chunkResult.error.message}")
+                }
+            }
+        }
+
+        if (accumulated.isBlank()) {
+            val err = lastError ?: AppError.AiProvider("Failed to receive stream content for video analysis")
+            FlintLogger.e(tag, "Streaming failed without text output: ${err.message}")
+            emit(FlintResult.Error(err))
+            return@flow
+        }
+
+        val cleanedContent = AiContentCleaner.clean(accumulated)
+        val parsedAnalysis = YouTubeContentAnalysis.parseFromJson(cleanedContent)
+            ?: run {
+                FlintLogger.e(tag, "Failed to parse structured JSON from streamed response: $cleanedContent")
+                emit(FlintResult.Error(AppError.AiProvider("Failed to parse structured analysis from streamed response")))
+                return@flow
+            }
+
+        FlintLogger.i(tag, "YouTube Content Analysis SUCCESS! Summary: \"${parsedAnalysis.summary}\" | Topics: ${parsedAnalysis.mainTopics}")
+        emit(FlintResult.Success(parsedAnalysis))
+    }
+
     private fun buildAnalysisPrompt(
         title: String,
         channel: String,
@@ -71,7 +134,7 @@ class AnalyzeYouTubeContentUseCase(
             
             IMPORTANT DIRECTIVES:
             1. Base ALL analysis ONLY on the provided video information and transcript. Do NOT invent claims, quotes, or facts not present in the content.
-            2. Output MUST be a single raw JSON object strictly matching the following schema:
+            2. Output MUST strictly match the following JSON schema:
             
             {
               "summary": "Concise overview of the video's core message",
@@ -91,7 +154,7 @@ class AnalyzeYouTubeContentUseCase(
             TRANSCRIPT:
             $transcript
             
-            Provide ONLY valid JSON.
+            Provide ONLY raw JSON matching the schema above.
         """.trimIndent()
     }
 }
