@@ -99,61 +99,8 @@ class OpenRouterProvider(
             )
         }
 
-        FlintLogger.i(tag, "Calling OpenRouter API | Model: $effectiveModel | Endpoint: https://openrouter.ai/api/v1/chat/completions")
-
-        return try {
-            val requestBody = OpenRouterRequest(
-                model = effectiveModel,
-                messages = listOf(OpenRouterMessageRequest(role = "user", content = request.prompt)),
-                stream = false
-            )
-
-            val httpResponse = httpClient.post("https://openrouter.ai/api/v1/chat/completions") {
-                contentType(ContentType.Application.Json)
-                header(HttpHeaders.Authorization, "Bearer $activeApiKey")
-                header("HTTP-Referer", "https://github.com/shubhamthorat/flint")
-                header("X-Title", "Flint AI")
-                setBody(requestBody)
-            }
-
-            val responseText = httpResponse.bodyAsText()
-
-            if (!httpResponse.status.isSuccess()) {
-                FlintLogger.e(tag, "OpenRouter API HTTP Error ${httpResponse.status.value}: $responseText")
-                val errorMessage = parseErrorMessage(responseText) ?: "HTTP ${httpResponse.status.value}: ${httpResponse.status.description} | Payload: $responseText"
-                return FlintResult.Error(AppError.AiProvider("OpenRouter API Error: $errorMessage"))
-            }
-
-            val response = jsonParser.decodeFromString<OpenRouterResponse>(responseText)
-
-            if (response.error != null) {
-                val errMessage = response.error.message ?: "Unknown OpenRouter API error"
-                FlintLogger.e(tag, "OpenRouter API returned error payload: $errMessage")
-                return FlintResult.Error(AppError.AiProvider("OpenRouter API Error: $errMessage"))
-            }
-
-            val choice = response.choices?.firstOrNull()
-            val generatedContent = extractTextFromChoice(choice)?.let { AiContentCleaner.clean(it) }
-
-            if (generatedContent.isNullOrBlank()) {
-                FlintLogger.w(tag, "Non-stream response empty. Retrying with stream mode...")
-                return generateFromStream(request, effectiveModel)
-            }
-
-            val tokensUsed = response.usage?.totalTokens ?: (request.prompt.length * 2)
-            FlintLogger.i(tag, "OpenRouter Non-Stream Success! Tokens used: $tokensUsed")
-
-            FlintResult.Success(
-                AiResponse(
-                    content = generatedContent,
-                    providerUsed = "OpenRouter REST API ($effectiveModel)",
-                    tokensUsed = tokensUsed
-                )
-            )
-        } catch (e: Exception) {
-            FlintLogger.e(tag, "Exception calling OpenRouter API: ${e.message}. Retrying with stream mode...")
-            generateFromStream(request, effectiveModel)
-        }
+        FlintLogger.i(tag, "Calling OpenRouter SSE stream endpoint as default | Model: $effectiveModel")
+        return generateFromStream(request, effectiveModel)
     }
 
     private suspend fun generateFromStream(request: AiRequest, effectiveModel: String): FlintResult<AiResponse, AppError> {

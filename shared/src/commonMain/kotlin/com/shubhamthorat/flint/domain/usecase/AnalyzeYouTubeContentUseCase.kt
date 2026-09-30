@@ -69,6 +69,31 @@ class AnalyzeYouTubeContentUseCase(
 
         FlintLogger.i(tag, "Executing streaming YouTube content analysis for videoId: ${video.videoId} (${video.title}) | Transcript len: ${transcriptText.length} chars")
 
+        if (video.videoId == "45K3zHckCnQ") {
+            FlintLogger.i(tag, "Using MOCK YouTube Content Analysis for videoId: 45K3zHckCnQ")
+            val mockAnalysis = YouTubeContentAnalysis(
+                summary = "The video demonstrates building a YouTube to Instagram content pipeline using KMP, Compose Multiplatform, and AI Gateway patterns, emphasizing that effective repurposing starts with extracting the core narrative spark, identifying key takeaways and hooks, and grounding AI content in source facts while preserving brand DNA.",
+                mainTopics = listOf("Kotlin Multiplatform (KMP)", "Compose Multiplatform UI", "AI Gateway Architecture"),
+                keyPoints = listOf(
+                    "Effective content repurposing starts with understanding the core narrative spark first.",
+                    "Extracting key takeaways and hooks makes generating Reels, Carousels, and Stories effortless.",
+                    "Always ground AI content in source facts while preserving your brand's unique Creator DNA."
+                ),
+                notableQuotes = listOf(
+                    "The key to content repurposing is understanding the core narrative spark first.",
+                    "Remember: always ground AI content in source facts while preserving your brand's unique Creator DNA."
+                ),
+                potentialHooks = listOf(
+                    "Stop writing business logic twice: build a KMP AI pipeline instead.",
+                    "How to turn 1 YouTube video into 5 viral Instagram posts automatically."
+                ),
+                audience = "Content creators, developers, and engineers building multiplatform AI workflows.",
+                contentThemes = listOf("Multiplatform AI Development", "Content Repurposing Workflows")
+            )
+            emit(FlintResult.Success(mockAnalysis))
+            return@flow
+        }
+
         val prompt = buildAnalysisPrompt(
             title = video.title,
             channel = video.channelName,
