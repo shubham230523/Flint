@@ -72,7 +72,7 @@ class AnalyzeYouTubeContentUseCase(
         if (video.videoId == "45K3zHckCnQ") {
             FlintLogger.i(tag, "Using MOCK YouTube Content Analysis for videoId: 45K3zHckCnQ")
             val mockAnalysis = YouTubeContentAnalysis(
-                summary = "The video demonstrates building a YouTube to Instagram content pipeline using KMP, Compose Multiplatform, and AI Gateway patterns, emphasizing that effective repurposing starts with extracting the core narrative spark, identifying key takeaways and hooks, and grounding AI content in source facts while preserving brand DNA.",
+                summary = "MOCK_TEST_WORKSPACE: The video demonstrates building a YouTube to Instagram content pipeline using KMP, Compose Multiplatform, and AI Gateway patterns, emphasizing that effective repurposing starts with extracting the core narrative spark, identifying key takeaways and hooks, and grounding AI content in source facts while preserving brand DNA.",
                 mainTopics = listOf("Kotlin Multiplatform (KMP)", "Compose Multiplatform UI", "AI Gateway Architecture"),
                 keyPoints = listOf(
                     "Effective content repurposing starts with understanding the core narrative spark first.",

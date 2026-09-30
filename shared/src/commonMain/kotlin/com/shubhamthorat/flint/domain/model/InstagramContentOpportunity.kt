@@ -53,12 +53,13 @@ data class OpportunityListContainer(
 
             // Tier 1: Strict Kotlinx Serialization
             try {
-                if (sanitized.startsWith("[")) {
-                    return LenientJsonParser.lenientJson.decodeFromString<List<InstagramContentOpportunity>>(sanitized)
+                val list = if (sanitized.startsWith("[")) {
+                    LenientJsonParser.lenientJson.decodeFromString<List<InstagramContentOpportunity>>(sanitized)
                 } else {
-                    val container = LenientJsonParser.lenientJson.decodeFromString<OpportunityListContainer>(sanitized)
-                    if (container.opportunities.isNotEmpty()) return container.opportunities
+                    LenientJsonParser.lenientJson.decodeFromString<OpportunityListContainer>(sanitized).opportunities
                 }
+                val filtered = list.filterNot { isTemplatePlaceholder(it) }
+                if (filtered.isNotEmpty()) return filtered
             } catch (e: Exception) {
                 FlintLogger.w("OpportunityListContainer", "Tier 1 parse failed (${e.message}). Executing Tier 2 JsonElement extraction...")
             }
@@ -130,10 +131,20 @@ data class OpportunityListContainer(
                         )
                     }
                 }
-                if (list.isNotEmpty()) return list
+                if (list.isNotEmpty()) return list.filterNot { isTemplatePlaceholder(it) }
             } catch (_: Exception) {}
 
             return emptyList()
+        }
+
+        private fun isTemplatePlaceholder(opp: InstagramContentOpportunity): Boolean {
+            val t = opp.title.trim().lowercase()
+            val d = opp.description.trim().lowercase()
+            val h = opp.suggestedHook.trim().lowercase()
+            return t.contains("title of the idea") ||
+                   d.contains("what this instagram post is about") ||
+                   h.contains("strong opening hook") ||
+                   t == "title"
         }
     }
 }

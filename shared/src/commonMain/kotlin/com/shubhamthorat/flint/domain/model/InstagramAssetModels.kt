@@ -1,17 +1,9 @@
 package com.shubhamthorat.flint.domain.model
 
+import com.shubhamthorat.flint.domain.ai.LenientJsonParser
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-
-private val json = Json {
-    ignoreUnknownKeys = true
-    isLenient = true
-    coerceInputValues = true
-}
-
-private fun cleanJsonString(raw: String): String {
-    return com.shubhamthorat.flint.domain.ai.LenientJsonParser.sanitize(raw)
-}
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class InstagramReelContent(
@@ -23,7 +15,33 @@ data class InstagramReelContent(
 ) {
     companion object {
         fun parseFromJson(rawJson: String): InstagramReelContent? {
-            return try { json.decodeFromString<InstagramReelContent>(cleanJsonString(rawJson)) } catch (_: Exception) { null }
+            val sanitized = LenientJsonParser.sanitize(rawJson)
+            try {
+                return LenientJsonParser.lenientJson.decodeFromString<InstagramReelContent>(sanitized)
+            } catch (_: Exception) {}
+
+            try {
+                val elem = LenientJsonParser.lenientJson.parseToJsonElement(sanitized)
+                if (elem is JsonObject) {
+                    val hook = LenientJsonParser.extractString(elem, "hook", "openingHook", "opening_hook")
+                    val body = LenientJsonParser.extractString(elem, "body", "script", "spokenScript", "content")
+                    val ending = LenientJsonParser.extractString(elem, "ending", "conclusion", "outro")
+                    val cta = LenientJsonParser.extractString(elem, "CTA", "cta", "callToAction")
+                    val dur = LenientJsonParser.extractString(elem, "suggestedDuration", "duration").ifBlank { "30-45s" }
+
+                    if (hook.isNotBlank() || body.isNotBlank()) {
+                        return InstagramReelContent(
+                            hook = hook.ifBlank { "Look at this:" },
+                            body = body.ifBlank { "Here is the key takeaway." },
+                            ending = ending.ifBlank { "Follow for more!" },
+                            CTA = cta.ifBlank { "Save this post!" },
+                            suggestedDuration = dur
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+
+            return null
         }
     }
 }
@@ -42,7 +60,34 @@ data class InstagramCarousel(
 ) {
     companion object {
         fun parseFromJson(rawJson: String): InstagramCarousel? {
-            return try { json.decodeFromString<InstagramCarousel>(cleanJsonString(rawJson)) } catch (_: Exception) { null }
+            val sanitized = LenientJsonParser.sanitize(rawJson)
+            try {
+                return LenientJsonParser.lenientJson.decodeFromString<InstagramCarousel>(sanitized)
+            } catch (_: Exception) {}
+
+            try {
+                val elem = LenientJsonParser.lenientJson.parseToJsonElement(sanitized)
+                if (elem is JsonObject) {
+                    val title = LenientJsonParser.extractString(elem, "title", "headline", "name")
+                    val slidesArray = elem.keys.firstOrNull { it.equals("slides", ignoreCase = true) || it.equals("items", ignoreCase = true) }?.let { elem[it] as? JsonArray }
+                    val slides = slidesArray?.mapIndexedNotNull { idx, item ->
+                        if (item is JsonObject) {
+                            val h = LenientJsonParser.extractString(item, "headline", "title")
+                            val b = LenientJsonParser.extractString(item, "body", "content", "description")
+                            InstagramCarouselSlide(slideNumber = idx + 1, headline = h, body = b)
+                        } else null
+                    } ?: emptyList()
+
+                    if (title.isNotBlank() || slides.isNotEmpty()) {
+                        return InstagramCarousel(
+                            title = title.ifBlank { "Instagram Carousel" },
+                            slides = slides
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+
+            return null
         }
     }
 }
@@ -63,7 +108,36 @@ data class InstagramStorySequence(
 ) {
     companion object {
         fun parseFromJson(rawJson: String): InstagramStorySequence? {
-            return try { json.decodeFromString<InstagramStorySequence>(cleanJsonString(rawJson)) } catch (_: Exception) { null }
+            val sanitized = LenientJsonParser.sanitize(rawJson)
+            try {
+                return LenientJsonParser.lenientJson.decodeFromString<InstagramStorySequence>(sanitized)
+            } catch (_: Exception) {}
+
+            try {
+                val elem = LenientJsonParser.lenientJson.parseToJsonElement(sanitized)
+                if (elem is JsonObject) {
+                    val title = LenientJsonParser.extractString(elem, "title", "name")
+                    val storiesArray = elem.keys.firstOrNull { it.equals("stories", ignoreCase = true) || it.equals("sequence", ignoreCase = true) || it.equals("frames", ignoreCase = true) }?.let { elem[it] as? JsonArray }
+                    val stories = storiesArray?.mapIndexedNotNull { idx, item ->
+                        if (item is JsonObject) {
+                            val h = LenientJsonParser.extractString(item, "headline", "title")
+                            val b = LenientJsonParser.extractString(item, "body", "content")
+                            val sug = LenientJsonParser.extractString(item, "interactionSuggestion", "suggestion", "sticker")
+                            val cta = LenientJsonParser.extractString(item, "CTA", "cta")
+                            InstagramStory(sequenceNumber = idx + 1, headline = h, body = b, interactionSuggestion = sug, CTA = cta)
+                        } else null
+                    } ?: emptyList()
+
+                    if (title.isNotBlank() || stories.isNotEmpty()) {
+                        return InstagramStorySequence(
+                            title = title.ifBlank { "Instagram Story Sequence" },
+                            stories = stories
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+
+            return null
         }
     }
 }
@@ -77,7 +151,31 @@ data class InstagramQuotePost(
 ) {
     companion object {
         fun parseFromJson(rawJson: String): InstagramQuotePost? {
-            return try { json.decodeFromString<InstagramQuotePost>(cleanJsonString(rawJson)) } catch (_: Exception) { null }
+            val sanitized = LenientJsonParser.sanitize(rawJson)
+            try {
+                return LenientJsonParser.lenientJson.decodeFromString<InstagramQuotePost>(sanitized)
+            } catch (_: Exception) {}
+
+            try {
+                val elem = LenientJsonParser.lenientJson.parseToJsonElement(sanitized)
+                if (elem is JsonObject) {
+                    val quote = LenientJsonParser.extractString(elem, "quote", "text", "statement")
+                    val context = LenientJsonParser.extractString(elem, "context", "background")
+                    val caption = LenientJsonParser.extractString(elem, "caption", "body")
+                    val cta = LenientJsonParser.extractString(elem, "CTA", "cta")
+
+                    if (quote.isNotBlank() || caption.isNotBlank()) {
+                        return InstagramQuotePost(
+                            quote = quote,
+                            context = context,
+                            caption = caption,
+                            CTA = cta
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+
+            return null
         }
     }
 }
@@ -90,7 +188,29 @@ data class InstagramCaption(
 ) {
     companion object {
         fun parseFromJson(rawJson: String): InstagramCaption? {
-            return try { json.decodeFromString<InstagramCaption>(cleanJsonString(rawJson)) } catch (_: Exception) { null }
+            val sanitized = LenientJsonParser.sanitize(rawJson)
+            try {
+                return LenientJsonParser.lenientJson.decodeFromString<InstagramCaption>(sanitized)
+            } catch (_: Exception) {}
+
+            try {
+                val elem = LenientJsonParser.lenientJson.parseToJsonElement(sanitized)
+                if (elem is JsonObject) {
+                    val cap = LenientJsonParser.extractString(elem, "caption", "text", "body")
+                    val cta = LenientJsonParser.extractString(elem, "CTA", "cta")
+                    val tags = LenientJsonParser.extractStringList(elem, "hashtags", "tags")
+
+                    if (cap.isNotBlank()) {
+                        return InstagramCaption(
+                            caption = cap,
+                            CTA = cta,
+                            hashtags = tags
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+
+            return null
         }
     }
 }
