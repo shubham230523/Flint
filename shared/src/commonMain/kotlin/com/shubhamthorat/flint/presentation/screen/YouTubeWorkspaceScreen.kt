@@ -1,6 +1,7 @@
 package com.shubhamthorat.flint.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
+import com.shubhamthorat.flint.core.FlintLogger
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -287,7 +288,24 @@ fun YouTubeWorkspaceScreen(
                 status = ContentStatus.DRAFT,
                 platform = "Instagram"
             )
-            contentRepository.saveContent(asset)
+            FlintLogger.i(
+                "YouTubeWorkspaceScreen",
+                "Saving ContentAsset ID ${asset.id} (\"${asset.title}\") to Firestore collection path: users/{userId}/content"
+            )
+            when (val res = contentRepository.saveContent(asset)) {
+                is FlintResult.Success -> {
+                    FlintLogger.i(
+                        "YouTubeWorkspaceScreen",
+                        "Successfully saved asset ID ${asset.id} to Firestore Content Library!"
+                    )
+                }
+                is FlintResult.Error -> {
+                    FlintLogger.e(
+                        "YouTubeWorkspaceScreen",
+                        "Failed to save asset ID ${asset.id} to Firestore: ${res.error.message}"
+                    )
+                }
+            }
             showGeneratedModal = false
         }
     }
