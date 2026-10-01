@@ -44,9 +44,8 @@ fun ReelCandidateReviewScreen(
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(FlintTheme.spacing.medium)
-            .verticalScroll(rememberScrollState()),
+            .fillMaxWidth()
+            .padding(FlintTheme.spacing.medium),
         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
     ) {
         // Header Bar
@@ -69,8 +68,9 @@ fun ReelCandidateReviewScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val candidateLabel = if (candidates.size == 1) "Candidate" else "Candidates"
             Text(
-                text = "Found ${candidates.size} Reel Candidates (${acceptedCandidates.size} Selected)",
+                text = "Found ${candidates.size} Reel $candidateLabel (${acceptedCandidates.size} Selected)",
                 style = FlintTheme.typography.titleMedium,
                 color = FlintTheme.colors.primary,
                 fontWeight = FontWeight.SemiBold
