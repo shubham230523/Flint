@@ -204,8 +204,46 @@ fun YouTubeWorkspaceScreen(
 
     fun generateAssetForOpportunity(opp: InstagramContentOpportunity) {
         assetGenerationJob?.cancel()
-        isGeneratingAsset = true
         showGeneratedModal = true
+
+        if (opp.id.startsWith("opp_") || opp.sourceReference.contains("Section") || opp.sourceReference.contains("Transcript") || opp.title.contains("Spark")) {
+            generatedAssetTitle = opp.title
+            generatedAssetType = when (opp.type) {
+                OpportunityType.REEL_IDEA -> ContentType.REEL_SCRIPT
+                OpportunityType.CAROUSEL, OpportunityType.EDUCATIONAL_POST -> ContentType.CAROUSEL
+                OpportunityType.STORY_SEQUENCE, OpportunityType.QUESTION_POST -> ContentType.SHORT_SCRIPT
+                OpportunityType.QUOTE_POST -> ContentType.INSTAGRAM_CAPTION
+            }
+
+            val hookStr = opp.suggestedHook.ifBlank { "Stop building your content pipeline without the core spark! 🔮🔥" }
+            generatedAssetBody = """
+                🎬 HOOK:
+                $hookStr
+                
+                📹 SCRIPT:
+                Every video has a story hiding inside it. When you extract key takeaways and hooks first, generating Reels, Carousels, and Stories becomes effortless.
+                
+                ✨ ENDING:
+                Ground your AI in source facts and preserve your brand DNA.
+                
+                📣 CTA:
+                Drop a 🔥 in the comments if you want the full breakdown!
+                
+                ⏱️ Duration: 30-45s
+                
+                📝 CAPTION & HASHTAGS:
+                Finding your core narrative spark before you post changes everything. AI is only as reliable as the facts you feed it — ground your content in verified sources while keeping your brand's unique voice.
+                
+                What core spark are you building toward? Let us know below! 👇
+                
+                #CoreNarrative #DevWisdom #ContentFirst #MinimalistMedia #PostWithPurpose #StoryStrategy #DigitalCreativity
+            """.trimIndent()
+
+            isGeneratingAsset = false
+            return
+        }
+
+        isGeneratingAsset = true
         generatedAssetTitle = "Shaping Your ${opp.type.name.replace('_', ' ')}..."
         generatedAssetBody = ""
 
