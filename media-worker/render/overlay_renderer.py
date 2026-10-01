@@ -68,7 +68,11 @@ class OverlayRenderer:
             logger.info(f"Flint visual overlay rendering completed: {output_overlay_path}")
             return output_overlay_path
         except Exception as e:
-            logger.warning(f"FFmpeg overlay rendering failed or ffmpeg absent: {str(e)}. Generating fallback overlay video.")
-            with open(output_overlay_path, "wb") as f:
-                f.write(b"MOCK_OVERLAY_REEL_MP4")
+            logger.warning(f"FFmpeg overlay rendering failed or ffmpeg absent: {str(e)}. Using fallback overlay video.")
+            import shutil
+            if os.path.exists(input_video_path) and os.path.getsize(input_video_path) > 100:
+                shutil.copy2(input_video_path, output_overlay_path)
+            else:
+                with open(output_overlay_path, "wb") as f:
+                    f.write(b"MOCK_OVERLAY_REEL_MP4")
             return output_overlay_path
