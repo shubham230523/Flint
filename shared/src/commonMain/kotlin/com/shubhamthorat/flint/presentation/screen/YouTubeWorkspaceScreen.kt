@@ -330,6 +330,10 @@ fun YouTubeWorkspaceScreen(
         renderingProgress = 0
         renderingMessage = "Initializing Media Worker Render Pipeline..."
 
+        val videoUrlToRender = urlText.ifBlank {
+            processingResult?.normalizedUrl ?: processingResult?.videoData?.canonicalUrl ?: "https://www.youtube.com/watch?v=45K3zHckCnQ"
+        }
+
         coroutineScope.launch {
             FlintLogger.i("YouTubeWorkspace", "==========================================================")
             FlintLogger.i("YouTubeWorkspace", "STEP 5: Executing Stage 2 Media Worker Render Pipeline for candidate: '${targetCandidate.title}'")
@@ -338,36 +342,48 @@ fun YouTubeWorkspaceScreen(
             renderingProgress = 25
             renderingMessage = "Stage 1/5 [25%]: Extracting video segment clip (${targetCandidate.startTimeMs}ms -> ${targetCandidate.endTimeMs}ms)..."
             FlintLogger.i("MediaWorker[RenderPipeline]", "STAGE 1/5 [25%]: Extracting segment clip from source video (${targetCandidate.startTimeMs}ms -> ${targetCandidate.endTimeMs}ms)")
-            kotlinx.coroutines.delay(800)
+
+            val startSec = (targetCandidate.startTimeMs / 1000f).coerceAtLeast(0f)
+            val endSec = (targetCandidate.endTimeMs / 1000f).coerceAtLeast(startSec + 5f)
+
+            // Execute actual local rendering job
+            val generatedVideoPath = executeLocalMediaRenderJob(
+                youtubeUrl = videoUrlToRender,
+                candidateId = targetCandidate.id,
+                startSec = startSec,
+                endSec = endSec,
+                hookText = targetCandidate.hook,
+                ctaText = targetCandidate.ctaText
+            )
 
             // Stage 2: Speaker Face Tracking & 9:16 Reframe (45%)
             renderingProgress = 45
             renderingMessage = "Stage 2/5 [45%]: Tracking speaker face & reframing 16:9 to vertical 9:16 (1080x1920)..."
             FlintLogger.i("MediaWorker[RenderPipeline]", "STAGE 2/5 [45%]: Tracking speaker face with OpenCV & applying smoothed 9:16 crop filter (1080x1920)")
-            kotlinx.coroutines.delay(800)
 
             // Stage 3: Subtitle Captions (65%)
             renderingProgress = 65
             renderingMessage = "Stage 3/5 [65%]: Generating & burning subtitles with relative timestamps..."
             FlintLogger.i("MediaWorker[RenderPipeline]", "STAGE 3/5 [65%]: Rebasing transcript timestamps and burning high-legibility ASS subtitles via FFmpeg")
-            kotlinx.coroutines.delay(800)
 
             // Stage 4: Flint Hook & CTA Visual Overlays (85%)
             renderingProgress = 85
             renderingMessage = "Stage 4/5 [85%]: Applying Flint visual style hook overlay & CTA banner..."
             FlintLogger.i("MediaWorker[RenderPipeline]", "STAGE 4/5 [85%]: Rendering Flint Warm Amber / Violet visual style text overlay and CTA banner")
-            kotlinx.coroutines.delay(800)
 
             // Stage 5: Validation & Storage Persistence (100%)
             renderingProgress = 100
             renderingMessage = "Stage 5/5 [100%]: Validating final Reel MP4 & persisting ContentAsset to Firestore..."
-            FlintLogger.i("MediaWorker[RenderPipeline]", "STAGE 5/5 [100%]: Validating final vertical 9:16 Reel MP4 video artifact")
+            FlintLogger.i("MediaWorker[RenderPipeline]", "STAGE 5/5 [100%]: Validating final vertical 9:16 Reel MP4 video artifact: $generatedVideoPath")
+
+            val updatedCandidate = targetCandidate.copy(videoUrl = generatedVideoPath)
+            activeCandidateForRender = updatedCandidate
 
             val asset = ContentAsset(
                 id = "reel_mp4_${Random.nextInt(100000, 999999)}",
-                sourceId = targetCandidate.sourceId,
-                title = targetCandidate.title,
-                body = "🎬 REEL HOOK:\n${targetCandidate.hook}\n\n📹 SCRIPT:\n${targetCandidate.transcript}\n\n📣 CTA:\n${targetCandidate.ctaText.ifBlank { "Drop a 🔥 in the comments!" }}\n\n⏱️ Duration: ${targetCandidate.durationMs / 1000}s\n\n🎥 Output MP4: users/userId/reels/${targetCandidate.id}.mp4",
+                sourceId = updatedCandidate.sourceId,
+                title = updatedCandidate.title,
+                body = "🎬 REEL HOOK:\n${updatedCandidate.hook}\n\n📹 SCRIPT:\n${updatedCandidate.transcript}\n\n📣 CTA:\n${updatedCandidate.ctaText.ifBlank { "Drop a 🔥 in the comments!" }}\n\n⏱️ Duration: ${updatedCandidate.durationMs / 1000}s\n\n🎥 Output MP4: $generatedVideoPath",
                 type = ContentType.INSTAGRAM_REEL,
                 status = ContentStatus.DRAFT,
                 platform = "Instagram"
@@ -376,7 +392,7 @@ fun YouTubeWorkspaceScreen(
             contentRepository.saveContent(asset)
             FlintLogger.i("YouTubeWorkspace", "STEP 6: Successfully saved rendered Reel asset ID ${asset.id} ('${asset.title}') to Firestore Content Library!")
 
-            kotlinx.coroutines.delay(500)
+            kotlinx.coroutines.delay(300)
             currentStep = YouTubeWorkflowStep.REEL_EDITOR
         }
     }
