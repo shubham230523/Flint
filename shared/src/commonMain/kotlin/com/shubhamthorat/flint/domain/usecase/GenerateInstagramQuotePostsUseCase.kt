@@ -53,13 +53,13 @@ class GenerateInstagramQuotePostsUseCase(
             }
         }
 
-        // Fallback for timeout / network stalls on free LLM endpoints
-        FlintLogger.w(tag, "AI call failed or stalled. Returning structured fallback Quote Post")
+        // Fallback for timeout / network stalls
+        FlintLogger.w(tag, "AI call failed or stalled. Returning dynamic Quote Post from opportunity details")
         val fallbackQuote = InstagramQuotePost(
-            quote = opportunity.suggestedHook.ifBlank { "Get to the spark first. Everything else is just noise." },
+            quote = opportunity.suggestedHook.ifBlank { opportunity.description },
             context = opportunity.title,
-            caption = "Your core narrative spark is what turns scrolling into engagement. Build toward that, not just the algorithm.",
-            CTA = "What's the core spark driving your next move? Drop it in the comments! 👇"
+            caption = opportunity.description,
+            CTA = "Share your thoughts in the comments below! 👇"
         )
         return FlintResult.Success(fallbackQuote)
     }

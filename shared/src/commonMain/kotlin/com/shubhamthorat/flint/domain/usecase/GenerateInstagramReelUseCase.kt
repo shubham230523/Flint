@@ -62,13 +62,13 @@ class GenerateInstagramReelUseCase(
         }
 
         // Fallback for timeout / network stalls
-        FlintLogger.w(tag, "AI call failed or stalled. Returning structured fallback Reel Content")
+        FlintLogger.w(tag, "AI call failed or stalled. Returning dynamic Reel Content from opportunity details")
         val fallbackReel = InstagramReelContent(
-            hook = opportunity.suggestedHook.ifBlank { "Stop building your content pipeline without the core spark! 🔮🔥" },
-            body = "Every video has a story hiding inside it. When you extract key takeaways and hooks first, generating Reels, Carousels, and Stories becomes effortless.",
-            ending = "Ground your AI in source facts and preserve your brand DNA.",
-            CTA = "Drop a 🔥 in the comments if you want the full breakdown!",
-            suggestedDuration = "30-45s"
+            hook = opportunity.suggestedHook.ifBlank { "Here is what you need to know about ${opportunity.title}" },
+            body = "${opportunity.description}\n\nKey Insight: ${opportunity.sourceReference}",
+            ending = "Follow for more insights on ${opportunity.title}!",
+            CTA = "Drop your thoughts on this in the comments!",
+            suggestedDuration = "30s"
         )
         return FlintResult.Success(fallbackReel)
     }

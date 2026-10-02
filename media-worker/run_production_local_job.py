@@ -25,7 +25,7 @@ def run_production_job(
     youtube_url: str = "https://www.youtube.com/watch?v=45K3zHckCnQ",
     start_sec: float = 0.0,
     end_sec: float = 35.0,
-    hook_text: str = "Stop building without the core spark! 🔮🔥",
+    hook_text: str = "",
     cta_text: str = "Save & Share this Reel!",
     output_path: Optional[str] = None
 ) -> Dict[str, Any]:

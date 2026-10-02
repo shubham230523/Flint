@@ -33,7 +33,7 @@ def process_media_job(job: MediaJobPayload):
     youtube_url = job.metadata.get("youtubeUrl", "https://www.youtube.com/watch?v=45K3zHckCnQ")
     start_sec = float(job.metadata.get("startSec", "0.0"))
     end_sec = float(job.metadata.get("endSec", "35.0"))
-    hook_text = job.metadata.get("hookText", "Stop building without the core spark! 🔮🔥")
+    hook_text = job.metadata.get("hookText", "")
     cta_text = job.metadata.get("ctaText", "Save & Share this Reel!")
 
     try:

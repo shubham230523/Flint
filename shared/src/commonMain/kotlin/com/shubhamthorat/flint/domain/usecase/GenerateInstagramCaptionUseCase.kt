@@ -60,11 +60,11 @@ class GenerateInstagramCaptionUseCase(
         }
 
         // Fallback for timeout / network stalls
-        FlintLogger.w(tag, "AI call failed or stalled. Returning structured fallback Caption")
+        FlintLogger.w(tag, "AI call failed or stalled. Returning dynamic Caption from opportunity details")
         val fallbackCaption = InstagramCaption(
-            caption = "Finding your core narrative spark before you post changes everything. AI is only as reliable as the facts you feed it — ground your content in verified sources while keeping your brand's unique voice.",
-            CTA = "What core spark are you building toward? Let us know below! 👇",
-            hashtags = listOf("#CoreNarrative", "#DevWisdom", "#ContentFirst", "#MinimalistMedia", "#PostWithPurpose", "#StoryStrategy", "#DigitalCreativity")
+            caption = "${opportunity.suggestedHook.ifBlank { opportunity.title }}\n\n${opportunity.description}",
+            CTA = "What do you think about this? Let us know below! 👇",
+            hashtags = listOf("#ContentStrategy", "#DigitalMedia", "#VideoInsights", "#InstagramGrowth")
         )
         return FlintResult.Success(fallbackCaption)
     }

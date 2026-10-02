@@ -271,47 +271,35 @@ fun YouTubeWorkspaceScreen(
             }
             candidatesList
         } else {
+            val videoTitle = processingResult?.videoData?.title ?: opp?.title ?: "Video Reel Candidate"
+            val videoDesc = processingResult?.videoData?.description?.ifBlank { videoTitle } ?: videoTitle
             listOf(
                 ReelCandidate(
-                    id = "cand_1",
-                    sourceId = processingResult?.source?.id ?: "src_yt_1",
+                    id = "cand_real_1",
+                    sourceId = processingResult?.source?.id ?: "src_real_1",
                     startTimeMs = 0L,
-                    endTimeMs = 35000L,
-                    transcript = "Welcome back to Flint. Today we are building a YouTube to Instagram pipeline. The key to content repurposing is understanding the core narrative spark first.",
-                    title = opp?.title ?: "The Core Narrative Spark",
-                    hook = opp?.suggestedHook?.ifBlank { "Stop building your content pipeline without the core spark! 🔮🔥" } ?: "Stop building your content pipeline without the core spark! 🔮🔥",
-                    reason = "Strong standalone narrative spark with high transcript keyword density",
+                    endTimeMs = 30000L,
+                    transcript = videoDesc.take(200),
+                    title = videoTitle,
+                    hook = opp?.suggestedHook?.ifBlank { "Key Insight: $videoTitle" } ?: "Key Insight: $videoTitle",
+                    reason = "Extracted from video summary and description",
                     contentType = ReelCandidateType.EDUCATIONAL,
                     candidateScore = 0.95f,
-                    confidence = 0.92f,
+                    confidence = 0.90f,
                     status = ReelCandidateStatus.DISCOVERED
                 ),
                 ReelCandidate(
-                    id = "cand_2",
-                    sourceId = processingResult?.source?.id ?: "src_yt_1",
-                    startTimeMs = 40000L,
-                    endTimeMs = 75000L,
-                    transcript = "Once you extract key takeaways and hooks, generating Reels, Carousels, and Stories becomes effortless. Always ground your AI in source facts.",
-                    title = "Extract Takeaways & Preserve Brand DNA",
-                    hook = "Your codebase needs refactoring, and so does your content strategy! 🧩",
-                    reason = "Clear actionable takeaway for creators and engineers",
+                    id = "cand_real_2",
+                    sourceId = processingResult?.source?.id ?: "src_real_1",
+                    startTimeMs = 30000L,
+                    endTimeMs = 60000L,
+                    transcript = "Channel: ${processingResult?.videoData?.channelName ?: "YouTube Source"} | $videoTitle",
+                    title = "Takeaway from ${processingResult?.videoData?.channelName ?: "Source"}",
+                    hook = "Here is what you need to know about $videoTitle",
+                    reason = "Highlighted key channel breakdown",
                     contentType = ReelCandidateType.HOW_TO,
                     candidateScore = 0.88f,
                     confidence = 0.85f,
-                    status = ReelCandidateStatus.DISCOVERED
-                ),
-                ReelCandidate(
-                    id = "cand_3",
-                    sourceId = processingResult?.source?.id ?: "src_yt_1",
-                    startTimeMs = 80000L,
-                    endTimeMs = 120000L,
-                    transcript = "AI is only as reliable as the facts you feed it. Stop hallucinating your captions and start grounding them in verified video transcripts.",
-                    title = "Ground AI in Source Facts",
-                    hook = "AI is only as reliable as the facts you feed it! 🤖📝",
-                    reason = "High contrast opinion quote with strong hook potential",
-                    contentType = ReelCandidateType.OPINION,
-                    candidateScore = 0.82f,
-                    confidence = 0.80f,
                     status = ReelCandidateStatus.DISCOVERED
                 )
             )
@@ -403,43 +391,6 @@ fun YouTubeWorkspaceScreen(
         showGeneratedModal = true
 
         FlintLogger.i("YouTubeWorkspace", "STEP 3: User clicked preview script for opportunity: '${opp.title}'")
-
-        if (opp.id.startsWith("opp_") || opp.sourceReference.contains("Section") || opp.sourceReference.contains("Transcript") || opp.title.contains("Spark")) {
-            generatedAssetTitle = opp.title
-            generatedAssetType = when (opp.type) {
-                OpportunityType.REEL_IDEA -> ContentType.REEL_SCRIPT
-                OpportunityType.CAROUSEL, OpportunityType.EDUCATIONAL_POST -> ContentType.CAROUSEL
-                OpportunityType.STORY_SEQUENCE, OpportunityType.QUESTION_POST -> ContentType.SHORT_SCRIPT
-                OpportunityType.QUOTE_POST -> ContentType.INSTAGRAM_CAPTION
-            }
-
-            val hookStr = opp.suggestedHook.ifBlank { "Stop building your content pipeline without the core spark! 🔮🔥" }
-            generatedAssetBody = """
-                🎬 HOOK:
-                $hookStr
-                
-                📹 SCRIPT:
-                Every video has a story hiding inside it. When you extract key takeaways and hooks first, generating Reels, Carousels, and Stories becomes effortless.
-                
-                ✨ ENDING:
-                Ground your AI in source facts and preserve your brand DNA.
-                
-                📣 CTA:
-                Drop a 🔥 in the comments if you want the full breakdown!
-                
-                ⏱️ Duration: 30-45s
-                
-                📝 CAPTION & HASHTAGS:
-                Finding your core narrative spark before you post changes everything. AI is only as reliable as the facts you feed it — ground your content in verified sources while keeping your brand's unique voice.
-                
-                What core spark are you building toward? Let us know below! 👇
-                
-                #CoreNarrative #DevWisdom #ContentFirst #MinimalistMedia #PostWithPurpose #StoryStrategy #DigitalCreativity
-            """.trimIndent()
-
-            isGeneratingAsset = false
-            return
-        }
 
         isGeneratingAsset = true
         generatedAssetTitle = "Shaping Your ${opp.type.name.replace('_', ' ')}..."
@@ -856,13 +807,13 @@ fun YouTubeWorkspaceScreen(
 
             YouTubeWorkflowStep.REEL_EDITOR -> {
                 val candidateToEdit = activeCandidateForRender ?: reelCandidates.firstOrNull() ?: ReelCandidate(
-                    id = "cand_1",
-                    sourceId = "src_1",
+                    id = "cand_real_1",
+                    sourceId = processingResult?.source?.id ?: "src_real_1",
                     startTimeMs = 0L,
-                    endTimeMs = 35000L,
-                    transcript = "Welcome to Flint Reel Editor.",
-                    title = "The Core Narrative Spark",
-                    hook = "Stop building without the core spark! 🔮🔥"
+                    endTimeMs = 30000L,
+                    transcript = processingResult?.videoData?.description?.take(150) ?: "Video Reel Candidate",
+                    title = processingResult?.videoData?.title ?: "Video Reel Candidate",
+                    hook = "Key Insight: ${processingResult?.videoData?.title ?: "Video Reel"}"
                 )
 
                 FlintReelEditorScreen(

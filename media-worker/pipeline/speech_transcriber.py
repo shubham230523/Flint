@@ -112,9 +112,7 @@ class SpeechToTextProvider:
 
     def _generate_fallback_transcript(self) -> List[TranscriptSegment]:
         return [
-            TranscriptSegment("Welcome to Flint. Today we are exploring turning long YouTube videos into viral Instagram Reels.", 0, 8000),
-            TranscriptSegment("The core narrative spark is the secret ingredient for high-performing short-form content.", 8500, 18000),
-            TranscriptSegment("When you extract key takeaways and hooks first, generating Reels, Carousels, and Stories becomes effortless.", 18500, 32000),
-            TranscriptSegment("Always ground your AI in source facts while preserving your brand's unique Creator DNA.", 32500, 48000),
-            TranscriptSegment("Follow for more insights on multiplatform AI development!", 48500, 58000)
+            TranscriptSegment("Key takeaway and main highlight from video transcript.", 0, 10000),
+            TranscriptSegment("Core narrative point discussed during video presentation.", 10500, 25000),
+            TranscriptSegment("Actionable insights and summary takeaways.", 25500, 40000)
         ]

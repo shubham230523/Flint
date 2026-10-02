@@ -63,14 +63,14 @@ class GenerateInstagramCarouselUseCase(
         }
 
         // Fallback for timeout / network stalls
-        FlintLogger.w(tag, "AI call failed or stalled. Returning structured fallback Carousel")
+        FlintLogger.w(tag, "AI call failed or stalled. Returning dynamic Carousel from opportunity details")
         val fallbackCarousel = InstagramCarousel(
             title = opportunity.title,
             slides = listOf(
-                InstagramCarouselSlide(1, "The Core Narrative Spark", "Every piece of content needs a core function before repurposing it across platforms."),
-                InstagramCarouselSlide(2, "Extract Key Takeaways", "Isolate quotes, hooks, and actionable insights from the video transcript."),
-                InstagramCarouselSlide(3, "Preserve Brand DNA", "Ground your AI in verified source facts while keeping your unique voice."),
-                InstagramCarouselSlide(4, "Multiplatform Automation", "Turn 1 YouTube video into 5 viral Instagram posts effortlessly.")
+                InstagramCarouselSlide(1, opportunity.title, opportunity.description),
+                InstagramCarouselSlide(2, "Key Takeaway", opportunity.suggestedHook.ifBlank { opportunity.sourceReference }),
+                InstagramCarouselSlide(3, "Deep Dive", "Exploring ${opportunity.title} in depth: ${opportunity.sourceReference}"),
+                InstagramCarouselSlide(4, "Summary", "Save & share this post if you found it valuable!")
             )
         )
         return FlintResult.Success(fallbackCarousel)

@@ -63,14 +63,13 @@ class GenerateInstagramStoriesUseCase(
         }
 
         // Fallback for timeout / network stalls
-        FlintLogger.w(tag, "AI call failed or stalled. Returning structured fallback Story Sequence")
+        FlintLogger.w(tag, "AI call failed or stalled. Returning dynamic Story Sequence from opportunity details")
         val fallbackStories = InstagramStorySequence(
             title = opportunity.title,
             stories = listOf(
-                InstagramStory(1, "The Spark", "Start with the core narrative spark before building content.", "Poll: Do you repurpose content? (Yes/No)", "Tap for step 2"),
-                InstagramStory(2, "The Extraction", "Extract key takeaways, quotes, and hooks automatically.", "Quiz: What matters most? (Hook/Body/CTA)", "Tap for step 3"),
-                InstagramStory(3, "The Grounding", "Ensure AI output stays grounded in source facts.", "Question Sticker: Ask me anything about KMP!", "Tap for final step"),
-                InstagramStory(4, "The Publish", "Save to Content Library and publish across campaigns.", "", "Save this story sequence! 💾")
+                InstagramStory(1, opportunity.title, opportunity.suggestedHook.ifBlank { opportunity.description }, "Poll: What do you think?", "Tap for next frame"),
+                InstagramStory(2, "Overview", opportunity.description, "Question Sticker: Thoughts?", "Tap for next frame"),
+                InstagramStory(3, "Key Takeaway", opportunity.sourceReference, "", "Save this story sequence! 💾")
             )
         )
         return FlintResult.Success(fallbackStories)

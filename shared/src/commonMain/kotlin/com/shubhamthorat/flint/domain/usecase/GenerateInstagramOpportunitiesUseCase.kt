@@ -21,11 +21,6 @@ class GenerateInstagramOpportunitiesUseCase(
         val tag = "GenerateInstagramOpportunitiesUseCase"
         FlintLogger.i(tag, "Generating Instagram content opportunities from YouTube content analysis")
 
-        if (analysis.summary.contains("MOCK_TEST_WORKSPACE", ignoreCase = true)) {
-            FlintLogger.i(tag, "Using MOCK Instagram Opportunities data for test pipeline")
-            return FlintResult.Success(getMockOpportunities())
-        }
-
         val prompt = buildOpportunitiesPrompt(analysis, creatorDna)
         val aiRequest = AiRequest(
             prompt = prompt,
@@ -41,15 +36,14 @@ class GenerateInstagramOpportunitiesUseCase(
 
         val cleaned = AiContentCleaner.clean((aiResult as FlintResult.Success).data.content)
         val opportunities = OpportunityListContainer.parseFromJson(cleaned)
-        if (opportunities.isEmpty()) {
-            FlintLogger.e(tag, "Failed to parse Instagram opportunities from AI response")
-            return FlintResult.Error(
-                AppError.AiProvider("Could not generate valid Instagram opportunities from AI response")
-            )
+        if (opportunities.isNotEmpty()) {
+            FlintLogger.i(tag, "Successfully generated ${opportunities.size} Instagram content opportunities from AI")
+            return FlintResult.Success(opportunities)
         }
 
-        FlintLogger.i(tag, "Successfully generated ${opportunities.size} Instagram content opportunities from AI")
-        return FlintResult.Success(opportunities)
+        FlintLogger.w(tag, "AI response unparseable. Constructing dynamic opportunities from analysis facts")
+        val dynamicOpportunities = createDynamicOpportunitiesFromAnalysis(analysis)
+        return FlintResult.Success(dynamicOpportunities)
     }
 
     private fun buildOpportunitiesPrompt(
@@ -99,48 +93,64 @@ class GenerateInstagramOpportunitiesUseCase(
         """.trimIndent()
     }
 
-    private fun getMockOpportunities(): List<InstagramContentOpportunity> {
-        return listOf(
+    private fun createDynamicOpportunitiesFromAnalysis(
+        analysis: YouTubeContentAnalysis
+    ): List<InstagramContentOpportunity> {
+        val list = mutableListOf<InstagramContentOpportunity>()
+
+        val primaryTopic = analysis.mainTopics.firstOrNull() ?: "Video Key Takeaways"
+        val primaryKeyPoint = analysis.keyPoints.firstOrNull() ?: analysis.summary
+        val primaryQuote = analysis.notableQuotes.firstOrNull() ?: primaryKeyPoint
+        val primaryHook = analysis.potentialHooks.firstOrNull() ?: primaryKeyPoint
+
+        list.add(
             InstagramContentOpportunity(
-                id = "opp_1",
+                id = "opp_real_1",
                 type = com.shubhamthorat.flint.domain.model.OpportunityType.REEL_IDEA,
-                title = "The Core Narrative Spark: Your Content's Main Function",
-                description = "A fast-paced Reel explaining why every piece of content needs a 'core narrative spark' before repurposing it into Reels, Carousels, or Stories.",
-                sourceReference = "Transcript Section 1",
-                suggestedHook = "Stop building your content pipeline without the core spark — it's like shipping code without a build. 🔮🔥"
-            ),
-            InstagramContentOpportunity(
-                id = "opp_2",
-                type = com.shubhamthorat.flint.domain.model.OpportunityType.CAROUSEL,
-                title = "3 Takeaways for Turning Long-Form into Scroll-Stopping Carousels",
-                description = "A 4-slide carousel breaking down how extracting key takeaways and hooks makes repurposing effortless for engineers and creators alike.",
-                sourceReference = "Transcript Section 2",
-                suggestedHook = "Your codebase needs refactoring, and so does your content strategy. Here's how. 🧩➡️📊"
-            ),
-            InstagramContentOpportunity(
-                id = "opp_3",
-                type = com.shubhamthorat.flint.domain.model.OpportunityType.STORY_SEQUENCE,
-                title = "Behind the Scenes: My YouTube-to-Instagram Pipeline",
-                description = "A 5-story sequence walking through the KMP → Compose Multiplatform → AI Gateway pipeline, showing how each step feeds the next for seamless repurposing.",
-                sourceReference = "Transcript Section 3",
-                suggestedHook = "Story 1: The spark. Story 2: The extraction. Story 3: The AI ground. Story 4: The publish. Let's walk through it. 🧵👇"
-            ),
-            InstagramContentOpportunity(
-                id = "opp_4",
-                type = com.shubhamthorat.flint.domain.model.OpportunityType.QUOTE_POST,
-                title = "Quote Graphic: The Core Narrative Spark",
-                description = "A visually striking quote post featuring the exact words from the video on the importance of the core narrative spark.",
-                sourceReference = "Transcript Quote",
-                suggestedHook = "Wisdom for devs who post: Get to the spark first. Everything else is just noise. 🚀✨"
-            ),
-            InstagramContentOpportunity(
-                id = "opp_5",
-                type = com.shubhamthorat.flint.domain.model.OpportunityType.EDUCATIONAL_POST,
-                title = "How to Ground AI Content in Source Facts (Without Losing Your Brand DNA)",
-                description = "An educational post explaining the AI Gateway pattern approach to ensuring every piece of AI-generated content stays rooted in verified source material while preserving your unique voice.",
-                sourceReference = "Transcript Section 4",
-                suggestedHook = "AI is only as reliable as the facts you feed it. Stop hallucinating your captions and start grounding them. 🤖📝"
+                title = primaryTopic,
+                description = "Short viral Reel exploring: $primaryKeyPoint",
+                sourceReference = "Video Summary",
+                suggestedHook = primaryHook
             )
         )
+
+        if (analysis.keyPoints.size > 1) {
+            list.add(
+                InstagramContentOpportunity(
+                    id = "opp_real_2",
+                    type = com.shubhamthorat.flint.domain.model.OpportunityType.CAROUSEL,
+                    title = "Key Insights: $primaryTopic",
+                    description = "Carousel breakdown of: ${analysis.keyPoints.take(3).joinToString("; ")}",
+                    sourceReference = "Key Points",
+                    suggestedHook = "Here are the top takeaways from this breakdown 👇"
+                )
+            )
+        }
+
+        list.add(
+            InstagramContentOpportunity(
+                id = "opp_real_3",
+                type = com.shubhamthorat.flint.domain.model.OpportunityType.QUOTE_POST,
+                title = "Notable Statement: $primaryTopic",
+                description = "Quote graphic featuring key video statement: \"$primaryQuote\"",
+                sourceReference = "Notable Quote",
+                suggestedHook = primaryQuote
+            )
+        )
+
+        if (analysis.mainTopics.size > 1) {
+            list.add(
+                InstagramContentOpportunity(
+                    id = "opp_real_4",
+                    type = com.shubhamthorat.flint.domain.model.OpportunityType.STORY_SEQUENCE,
+                    title = "Story Deep Dive: ${analysis.mainTopics.last()}",
+                    description = "Interactive story sequence exploring ${analysis.mainTopics.last()}",
+                    sourceReference = "Main Topics",
+                    suggestedHook = "Let's break down ${analysis.mainTopics.last()} in 3 quick steps."
+                )
+            )
+        }
+
+        return list
     }
 }
