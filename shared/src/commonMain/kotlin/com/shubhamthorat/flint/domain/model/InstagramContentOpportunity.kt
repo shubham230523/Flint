@@ -58,7 +58,7 @@ data class OpportunityListContainer(
                 } else {
                     LenientJsonParser.lenientJson.decodeFromString<OpportunityListContainer>(sanitized).opportunities
                 }
-                val filtered = list.filterNot { isTemplatePlaceholder(it) }
+                val filtered = list.filterNot { isTemplatePlaceholder(it) }.distinctBy { it.title.trim().lowercase() }
                 if (filtered.isNotEmpty()) return filtered
             } catch (e: Exception) {
                 FlintLogger.w("OpportunityListContainer", "Tier 1 parse failed (${e.message}). Executing Tier 2 JsonElement extraction...")
@@ -101,7 +101,8 @@ data class OpportunityListContainer(
                             }
                         }
                     }
-                    if (list.isNotEmpty()) return list
+                    val filtered = list.filterNot { isTemplatePlaceholder(it) }.distinctBy { it.title.trim().lowercase() }
+                    if (filtered.isNotEmpty()) return filtered
                 }
             } catch (e: Exception) {
                 FlintLogger.w("OpportunityListContainer", "Tier 2 parse failed (${e.message}). Executing Tier 3 Regex extraction...")
@@ -131,19 +132,24 @@ data class OpportunityListContainer(
                         )
                     }
                 }
-                if (list.isNotEmpty()) return list.filterNot { isTemplatePlaceholder(it) }
+                if (list.isNotEmpty()) return list.filterNot { isTemplatePlaceholder(it) }.distinctBy { it.title.trim().lowercase() }
             } catch (_: Exception) {}
 
             return emptyList()
         }
 
-        private fun isTemplatePlaceholder(opp: InstagramContentOpportunity): Boolean {
+        fun isTemplatePlaceholder(opp: InstagramContentOpportunity): Boolean {
             val t = opp.title.trim().lowercase()
             val d = opp.description.trim().lowercase()
             val h = opp.suggestedHook.trim().lowercase()
             return t.contains("title of the idea") ||
                    d.contains("what this instagram post is about") ||
                    h.contains("strong opening hook") ||
+                   t.contains("specific topic") ||
+                   t.contains("topic name") ||
+                   d.contains("specific topic") ||
+                   d.contains("topic name") ||
+                   h.contains("specific topic") ||
                    t == "title"
         }
     }

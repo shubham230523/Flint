@@ -72,10 +72,26 @@ class YouTubeDownloader:
         from pipeline.video_prober import VideoProber
         metadata = VideoProber.probe_video(target_video_path, job_id=job_id)
 
+        title = "YouTube Video"
+        channel_name = "YouTube Creator"
+        thumbnail_url = "https://img.youtube.com/vi/45K3zHckCnQ/hqdefault.jpg"
+
+        try:
+            import urllib.request, json
+            oembed_url = f"https://www.youtube.com/oembed?url={youtube_url}&format=json"
+            req = urllib.request.Request(oembed_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                title = data.get('title', title)
+                channel_name = data.get('author_name', channel_name)
+                thumbnail_url = data.get('thumbnail_url', thumbnail_url)
+        except Exception as oembed_err:
+            logger.warning(f"Metadata oEmbed fetch warning: {str(oembed_err)}")
+
         return YouTubeDownloadResult(
             video_path=target_video_path,
-            title="Building a Multiplatform AI Content System with Flint",
+            title=title,
             duration_sec=metadata.duration_sec,
-            channel_name="Flint Engineering",
-            thumbnail_url="https://img.youtube.com/vi/45K3zHckCnQ/hqdefault.jpg"
+            channel_name=channel_name,
+            thumbnail_url=thumbnail_url
         )

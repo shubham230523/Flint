@@ -41,8 +41,8 @@ import com.shubhamthorat.flint.domain.repository.ContentRepository
 import com.shubhamthorat.flint.domain.repository.ContentStatus
 import com.shubhamthorat.flint.domain.repository.ContentType
 import com.shubhamthorat.flint.domain.repository.CreatorDnaRepository
-import com.shubhamthorat.flint.domain.repository.FakeTranscriptProvider
-import com.shubhamthorat.flint.domain.repository.FakeYouTubeVideoProvider
+import com.shubhamthorat.flint.domain.repository.NetworkTranscriptProvider
+import com.shubhamthorat.flint.domain.repository.NetworkYouTubeVideoProvider
 import com.shubhamthorat.flint.domain.repository.SourceRepository
 import com.shubhamthorat.flint.domain.usecase.AnalyzeYouTubeContentUseCase
 import com.shubhamthorat.flint.domain.usecase.CreateYouTubeSourceUseCase
@@ -127,8 +127,8 @@ fun YouTubeWorkspaceScreen(
     val processSourceUseCase = remember {
         ProcessYouTubeSourceUseCase(
             sourceRepository = sourceRepository,
-            videoProvider = FakeYouTubeVideoProvider(),
-            transcriptProvider = FakeTranscriptProvider()
+            videoProvider = NetworkYouTubeVideoProvider(),
+            transcriptProvider = NetworkTranscriptProvider()
         )
     }
     val analyzeUseCase = remember { AnalyzeYouTubeContentUseCase(aiTaskRouter) }

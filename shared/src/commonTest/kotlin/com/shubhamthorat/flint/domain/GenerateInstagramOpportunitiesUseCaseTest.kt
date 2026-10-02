@@ -108,7 +108,7 @@ class GenerateInstagramOpportunitiesUseCaseTest {
             contentThemes = listOf("Architecture")
         )
 
-        val result = useCase.execute(sampleAnalysis)
+        val result = useCase.execute(sampleAnalysis, maxRetries = 2, initialDelayMs = 1L)
         assertTrue(result is FlintResult.Success<*>)
 
         val opportunities = (result as FlintResult.Success<*>).data as List<InstagramContentOpportunity>
@@ -124,7 +124,7 @@ class GenerateInstagramOpportunitiesUseCaseTest {
         val useCase = GenerateInstagramOpportunitiesUseCase(aiRepository)
 
         val sampleAnalysis = YouTubeContentAnalysis(summary = "Sample")
-        val result = useCase.execute(sampleAnalysis)
+        val result = useCase.execute(sampleAnalysis, maxRetries = 2, initialDelayMs = 1L)
 
         assertTrue(result is FlintResult.Error<*>)
         assertTrue(((result as FlintResult.Error<*>).error as AppError).message.contains("failed"))
