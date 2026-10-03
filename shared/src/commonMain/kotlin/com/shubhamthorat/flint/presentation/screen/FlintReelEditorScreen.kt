@@ -70,6 +70,23 @@ fun FlintReelEditorScreen(
     var currentProgressMs by remember { mutableStateOf(0L) }
     val durationMs = initialCandidate.durationMs.coerceAtLeast(20000L)
 
+    val videoPath = initialCandidate.videoUrl.ifBlank { "C:/tmp/flint_media/reels/job_prod_local_1_final_reel.mp4" }
+    var totalPreviewFrames by remember { mutableStateOf(0) }
+
+    // Prepare Preview Frames and Audio on load
+    LaunchedEffect(videoPath) {
+        totalPreviewFrames = preparePreviewFramesAndAudio(videoPath)
+    }
+
+    // Play/Pause Audio according to playback state
+    LaunchedEffect(isPlaying, currentProgressMs) {
+        if (isPlaying) {
+            playPreviewAudio(currentProgressMs)
+        } else {
+            pausePreviewAudio()
+        }
+    }
+
     // Simulated Reel Playback Timer Loop
     LaunchedEffect(isPlaying) {
         while (isPlaying) {
@@ -82,7 +99,6 @@ fun FlintReelEditorScreen(
     }
 
     fun openSystemVideoFile() {
-        val videoPath = initialCandidate.videoUrl.ifBlank { "C:/tmp/flint_media/reels/job_prod_local_1_final_reel.mp4" }
         FlintLogger.i("FlintReelEditorScreen", "Opening Reel video file: $videoPath")
         openVideoFileInSystemPlayer(videoPath)
     }
@@ -166,6 +182,20 @@ fun FlintReelEditorScreen(
                     .clickable { isPlaying = !isPlaying }
                     .padding(12.dp)
             ) {
+                // Render Real Video Frame Preview Image if available
+                val currentFrameNum = ((currentProgressMs / 1000L) % 30L + 1L).toInt()
+                val frameBitmap = remember(currentFrameNum, totalPreviewFrames) {
+                    loadPreviewFrameBitmap(currentFrameNum)
+                }
+
+                if (frameBitmap != null) {
+                    androidx.compose.foundation.Image(
+                        bitmap = frameBitmap,
+                        contentDescription = "Reel Frame Preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                }
                 // Top Hook Text Overlay Card (FFmpeg Hook Filter Style)
                 Box(
                     modifier = Modifier
