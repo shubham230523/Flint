@@ -35,7 +35,8 @@ fun ReelCandidateReviewScreen(
     navigationManager: NavigationManager,
     initialCandidates: List<ReelCandidate>,
     onAcceptCandidate: (ReelCandidate) -> Unit = {},
-    onRenderSelected: (List<ReelCandidate>) -> Unit = {}
+    onRenderSelected: (List<ReelCandidate>) -> Unit = {},
+    onBack: (() -> Unit)? = null
 ) {
     var candidates by remember { mutableStateOf(initialCandidates) }
     var editingCandidateId by remember { mutableStateOf<String?>(null) }
@@ -48,6 +49,21 @@ fun ReelCandidateReviewScreen(
             .padding(FlintTheme.spacing.medium),
         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
     ) {
+        // Top Navigation Bar
+        if (onBack != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FlintButton(
+                    onClick = { onBack() },
+                    text = "← Back to Opportunities",
+                    variant = FlintButtonVariant.SECONDARY
+                )
+            }
+        }
+
         // Header Bar
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(

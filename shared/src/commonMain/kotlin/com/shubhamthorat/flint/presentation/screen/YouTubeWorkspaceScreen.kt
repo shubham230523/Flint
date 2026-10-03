@@ -589,6 +589,16 @@ fun YouTubeWorkspaceScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
                     ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            FlintButton(
+                                onClick = { currentStep = YouTubeWorkflowStep.URL_INPUT },
+                                text = "← Back to URL Input",
+                                variant = FlintButtonVariant.SECONDARY
+                            )
+                        }
                         FlintCircularProgressIndicator()
                         Text(
                             text = loadingMessage,
@@ -605,6 +615,17 @@ fun YouTubeWorkspaceScreen(
                 val ana = contentAnalysis
 
                 if (proc != null && ana != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        FlintButton(
+                            onClick = { currentStep = YouTubeWorkflowStep.URL_INPUT },
+                            text = "← Back to URL Input",
+                            variant = FlintButtonVariant.SECONDARY
+                        )
+                    }
+
                     // Video Metadata Summary Card
                     FlintCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -776,6 +797,9 @@ fun YouTubeWorkspaceScreen(
                     },
                     onRenderSelected = { selectedList ->
                         startReelRenderingPipeline(selectedList)
+                    },
+                    onBack = {
+                        currentStep = YouTubeWorkflowStep.OPPORTUNITIES_VIEW
                     }
                 )
             }
@@ -789,6 +813,16 @@ fun YouTubeWorkspaceScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
                     ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            FlintButton(
+                                onClick = { currentStep = YouTubeWorkflowStep.REEL_CANDIDATES_REVIEW },
+                                text = "← Back to Candidates",
+                                variant = FlintButtonVariant.SECONDARY
+                            )
+                        }
                         FlintCircularProgressIndicator()
                         Text(
                             text = renderingMessage,
@@ -823,6 +857,9 @@ fun YouTubeWorkspaceScreen(
                     onSaveComplete = {
                         FlintLogger.i("YouTubeWorkspace", "Reel editor save complete! Returning to Opportunities view.")
                         currentStep = YouTubeWorkflowStep.OPPORTUNITIES_VIEW
+                    },
+                    onBack = {
+                        currentStep = YouTubeWorkflowStep.REEL_CANDIDATES_REVIEW
                     }
                 )
             }

@@ -55,7 +55,8 @@ fun FlintReelEditorScreen(
     navigationManager: NavigationManager,
     contentRepository: ContentRepository,
     initialCandidate: ReelCandidate,
-    onSaveComplete: () -> Unit = {}
+    onSaveComplete: () -> Unit = {},
+    onBack: (() -> Unit)? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     var title by remember { mutableStateOf(initialCandidate.title) }
@@ -112,6 +113,20 @@ fun FlintReelEditorScreen(
             .padding(FlintTheme.spacing.medium),
         verticalArrangement = Arrangement.spacedBy(FlintTheme.spacing.medium)
     ) {
+        // Top Navigation Bar
+        if (onBack != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FlintButton(
+                    onClick = { onBack() },
+                    text = "← Back to Opportunities",
+                    variant = FlintButtonVariant.SECONDARY
+                )
+            }
+        }
         // Header
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
