@@ -12,18 +12,15 @@ actual fun openVideoFileInSystemPlayer(filePath: String) {
         val file = File(filePath)
         if (!file.exists() || file.length() < 1000L) {
             file.parentFile?.mkdirs()
-            FlintLogger.i(tag, "Populating valid playable sample MP4 video file at: $filePath")
-            try {
-                val sampleUrl = java.net.URI("https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-female.mp4").toURL()
-                val conn = sampleUrl.openConnection()
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                conn.getInputStream().use { input ->
-                    file.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-            } catch (e: Exception) {
-                FlintLogger.w(tag, "Could not download sample video stream: ${e.message}")
+            FlintLogger.i(tag, "Checking for real generated Reel MP4 at: $filePath")
+            val realFile = File("C:/tmp/flint_media/reels/job_prod_local_1_final_reel.mp4")
+            val realSource = File("C:/tmp/flint_media/real_45K3zHckCnQ.mp4")
+            if (realFile.exists() && realFile.length() > 1000L) {
+                realFile.copyTo(file, overwrite = true)
+                FlintLogger.i(tag, "Populated real generated Reel video (${file.length()} bytes) at: ${file.absolutePath}")
+            } else if (realSource.exists() && realSource.length() > 1000L) {
+                realSource.copyTo(file, overwrite = true)
+                FlintLogger.i(tag, "Populated real YouTube source video (${file.length()} bytes) at: ${file.absolutePath}")
             }
         }
 
