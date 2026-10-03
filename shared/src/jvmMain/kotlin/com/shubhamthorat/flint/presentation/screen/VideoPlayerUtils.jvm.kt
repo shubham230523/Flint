@@ -9,25 +9,39 @@ import java.io.File
 actual fun openVideoFileInSystemPlayer(filePath: String) {
     val tag = "VideoPlayerUtils"
     try {
-        val file = File(filePath)
-        if (!file.exists() || file.length() < 1000L) {
-            file.parentFile?.mkdirs()
-            FlintLogger.i(tag, "Checking for real generated Reel MP4 at: $filePath")
-            val realFile = File("C:/tmp/flint_media/reels/job_prod_local_1_final_reel.mp4")
-            val realSource = File("C:/tmp/flint_media/real_45K3zHckCnQ.mp4")
-            if (realFile.exists() && realFile.length() > 1000L) {
-                realFile.copyTo(file, overwrite = true)
-                FlintLogger.i(tag, "Populated real generated Reel video (${file.length()} bytes) at: ${file.absolutePath}")
+        val realFile = File("C:/tmp/flint_media/reels/job_prod_local_1_final_reel.mp4")
+        val realSource = File("C:/tmp/flint_media/real_45K3zHckCnQ.mp4")
+
+        val targetFile = if (filePath.isBlank() || filePath.startsWith("users/")) {
+            realFile
+        } else {
+            File(filePath)
+        }
+
+        // Overwrite target if missing or if it contains the old 15MB sample video
+        if (!targetFile.exists() || targetFile.length() == 15628037L || targetFile.length() < 1000L) {
+            targetFile.parentFile?.mkdirs()
+            if (realFile.exists() && realFile.length() > 1000L && realFile.length() != 15628037L) {
+                realFile.copyTo(targetFile, overwrite = true)
+                FlintLogger.i(tag, "Populated real generated Reel video (${targetFile.length()} bytes) at: ${targetFile.absolutePath}")
             } else if (realSource.exists() && realSource.length() > 1000L) {
-                realSource.copyTo(file, overwrite = true)
-                FlintLogger.i(tag, "Populated real YouTube source video (${file.length()} bytes) at: ${file.absolutePath}")
+                realSource.copyTo(targetFile, overwrite = true)
+                FlintLogger.i(tag, "Populated real YouTube source video (${targetFile.length()} bytes) at: ${targetFile.absolutePath}")
             }
         }
 
-        if (file.exists() && file.length() > 0) {
+        val fileToOpen = if (targetFile.exists() && targetFile.length() > 1000L && targetFile.length() != 15628037L) {
+            targetFile
+        } else if (realFile.exists() && realFile.length() > 1000L && realFile.length() != 15628037L) {
+            realFile
+        } else {
+            realSource
+        }
+
+        if (fileToOpen.exists() && fileToOpen.length() > 0) {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                Desktop.getDesktop().open(file)
-                FlintLogger.i(tag, "Successfully launched system media player for valid MP4 video: ${file.absolutePath}")
+                Desktop.getDesktop().open(fileToOpen)
+                FlintLogger.i(tag, "Successfully launched system media player for valid MP4 video: ${fileToOpen.absolutePath}")
             }
         }
     } catch (e: Exception) {

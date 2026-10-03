@@ -24,6 +24,13 @@ class YouTubeDownloader:
         target_video_path = os.path.join(job_dir, "source_video.mp4")
         logger.info(f"Downloading real YouTube video via yt-dlp: URL={youtube_url}")
 
+        # Remove stale or mock source video if present
+        if os.path.exists(target_video_path) and os.path.getsize(target_video_path) < 20000000:
+            try:
+                os.remove(target_video_path)
+            except Exception:
+                pass
+
         import shutil
         yt_bin = shutil.which("yt-dlp") or shutil.which("yt-dlp.exe") or "yt-dlp.exe"
 
@@ -32,6 +39,7 @@ class YouTubeDownloader:
             yt_bin,
             "-f", "137+140-18/136+140-18/136+140/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
             "--merge-output-format", "mp4",
+            "--force-overwrites",
             "-o", target_video_path,
             "--no-playlist",
             "--no-check-certificates",

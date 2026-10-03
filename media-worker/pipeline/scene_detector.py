@@ -39,7 +39,8 @@ class SceneDetector:
 
         try:
             from scenedetect import detect, ContentDetector
-            scene_list = detect(video_path, ContentDetector())
+            # Limit scene detection scan to first 300s (5 minutes) for fast candidate discovery
+            scene_list = detect(video_path, ContentDetector(), start_time=0, end_time=300)
             scenes = []
 
             for idx, (start_time, end_time) in enumerate(scene_list):

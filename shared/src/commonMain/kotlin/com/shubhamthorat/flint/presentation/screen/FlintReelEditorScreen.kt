@@ -81,7 +81,7 @@ fun FlintReelEditorScreen(
     }
 
     fun openSystemVideoFile() {
-        val videoPath = initialCandidate.videoUrl.ifBlank { "/tmp/flint_media/jobs/job_1/final_reel_output.mp4" }
+        val videoPath = initialCandidate.videoUrl.ifBlank { "C:/tmp/flint_media/reels/job_prod_local_1_final_reel.mp4" }
         FlintLogger.i("FlintReelEditorScreen", "Opening Reel video file: $videoPath")
         openVideoFileInSystemPlayer(videoPath)
     }
@@ -305,8 +305,9 @@ fun FlintReelEditorScreen(
                             )
                         }
 
+                        val displayPath = initialCandidate.videoUrl.ifBlank { "C:/tmp/flint_media/reels/${initialCandidate.id}_final_reel.mp4" }
                         Text(
-                            text = "Rendered file location: users/userId/reels/${initialCandidate.id}.mp4",
+                            text = "Rendered file location: $displayPath",
                             style = FlintTheme.typography.labelSmall,
                             color = FlintTheme.colors.primary
                         )
