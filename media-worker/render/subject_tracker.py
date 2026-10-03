@@ -59,16 +59,17 @@ class SubjectTracker:
 
         offset_x = SubjectTracker.calculate_smoothed_crop_offset(input_clip_path, 1080, 1920, logger)
 
-        # FFmpeg crop filter for 9:16 vertical output (out_w = in_h * 9 / 16)
-        # x_offset = (in_w - out_w) * offset_x
-        crop_filter = f"crop=ih*9/16:ih:(iw-ih*9/16)*{offset_x:.3f}:0,scale=1080:1920"
+        # FFmpeg crop filter for 9:16 vertical output (out_w = trunc(ih*9/32)*2 to ensure even dimensions)
+        crop_filter = f"crop=trunc(ih*9/32)*2:ih:(iw-trunc(ih*9/32)*2)*{offset_x:.3f}:0,scale=1080:1920"
 
         cmd = [
             "ffmpeg", "-y",
             "-i", input_clip_path,
             "-vf", crop_filter,
             "-c:v", "libx264",
-            "-c:a", "copy",
+            "-preset", "fast",
+            "-c:a", "aac",
+            "-b:a", "128k",
             output_reframe_path
         ]
 
@@ -77,11 +78,22 @@ class SubjectTracker:
             logger.info(f"Reframing 9:16 completed successfully: {output_reframe_path}")
             return output_reframe_path
         except Exception as e:
-            logger.warning(f"FFmpeg 9:16 reframing failed or ffmpeg absent: {str(e)}. Using fallback reframed video.")
-            import shutil
-            if os.path.exists(input_clip_path) and os.path.getsize(input_clip_path) > 100:
-                shutil.copy2(input_clip_path, output_reframe_path)
-            else:
-                with open(output_reframe_path, "wb") as f:
-                    f.write(b"MOCK_REFRAMED_9_16_MP4")
-            return output_reframe_path
+            logger.warning(f"FFmpeg 9:16 reframing with audio failed ({str(e)}). Retrying without audio re-encode...")
+            cmd_no_a = [
+                "ffmpeg", "-y",
+                "-i", input_clip_path,
+                "-vf", crop_filter,
+                "-c:v", "libx264",
+                "-an",
+                output_reframe_path
+            ]
+            try:
+                subprocess.run(cmd_no_a, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                logger.info(f"Reframing 9:16 (video only) completed successfully: {output_reframe_path}")
+                return output_reframe_path
+            except Exception as e2:
+                logger.error(f"FFmpeg 9:16 reframing failed completely: {str(e2)}")
+                import shutil
+                if os.path.exists(input_clip_path) and os.path.getsize(input_clip_path) > 100:
+                    shutil.copy2(input_clip_path, output_reframe_path)
+                return output_reframe_path

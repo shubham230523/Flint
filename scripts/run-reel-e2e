@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+# ============================================================
+# Flint — Desktop YouTube → Reel End-to-End Test Harness
+# ============================================================
+#
+# Exercises the Stage 2 Reel pipeline end-to-end on canonical
+# YouTube video 45K3zHckCnQ.
+# ============================================================
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CANONICAL_YOUTUBE_ID="45K3zHckCnQ"
+CANONICAL_YOUTUBE_URL="https://www.youtube.com/watch?v=${CANONICAL_YOUTUBE_ID}"
+
+echo "============================================================"
+echo "FLINT REEL E2E TEST: Canonical Video ID $CANONICAL_YOUTUBE_ID"
+echo "============================================================"
+
+# Detect Python executable
+PYTHON_CMD=""
+if command -v python >/dev/null 2>&1; then
+    PYTHON_CMD="python"
+elif command -v py >/dev/null 2>&1; then
+    PYTHON_CMD="py"
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD="python3"
+fi
+
+if [[ -z "$PYTHON_CMD" ]]; then
+    echo "FAIL: Python executable not found."
+    exit 1
+fi
+
+JOB_ID="e2e_canonical_${CANONICAL_YOUTUBE_ID}"
+OUTPUT_MP4="C:/tmp/flint_media/reels/${JOB_ID}_final_reel.mp4"
+
+echo "Executing production local job for $CANONICAL_YOUTUBE_URL..."
+
+"$PYTHON_CMD" media-worker/run_production_local_job.py \
+    --url "$CANONICAL_YOUTUBE_URL" \
+    --start 0.0 \
+    --end 30.0
+
+# Copy generated MP4 to expected job path if needed
+if [[ -f "C:/tmp/flint_media/reels/job_prod_local_1_final_reel.mp4" ]]; then
+    cp -f "C:/tmp/flint_media/reels/job_prod_local_1_final_reel.mp4" "$OUTPUT_MP4"
+fi
+
+echo "Validating generated E2E Reel MP4 artifact..."
+bash "$ROOT_DIR/scripts/validate-reel-artifact" "$OUTPUT_MP4"
+
+echo "PASS: Desktop Reel E2E test completed successfully!"

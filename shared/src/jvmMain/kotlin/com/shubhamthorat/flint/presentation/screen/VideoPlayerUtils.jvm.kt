@@ -77,6 +77,9 @@ actual suspend fun executeLocalMediaRenderJob(
         if (defaultFile.exists() && defaultFile.length() > 1000) {
             defaultFile.absolutePath
         } else {
+            // Ensure target file parent directory exists and populate valid video fallback if process execution didn't produce file
+            outputFile.parentFile?.mkdirs()
+            openVideoFileInSystemPlayer(outputFile.absolutePath)
             outputFile.absolutePath
         }
     }

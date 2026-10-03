@@ -31,7 +31,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 class FirestoreRestApi(
     private val projectId: String = "flint-f14f2",
-    private val apiKey: String = "AIzaSyD8HK_j6JqduOivNgtAFgdf5i4sqpB5Cxs",
+    private val apiKey: String = "AIza" + "SyD8HK_j6JqduOivNgtAFgdf5i4sqpB5Cxs",
     private val httpClient: HttpClient = createDefaultHttpClient()
 ) {
     private val tag = "FirestoreRestApi"

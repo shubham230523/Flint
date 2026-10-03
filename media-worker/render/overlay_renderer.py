@@ -59,7 +59,9 @@ class OverlayRenderer:
             "-i", input_video_path,
             "-vf", filter_str,
             "-c:v", "libx264",
-            "-c:a", "copy",
+            "-preset", "fast",
+            "-c:a", "aac",
+            "-b:a", "128k",
             output_overlay_path
         ]
 
@@ -68,11 +70,22 @@ class OverlayRenderer:
             logger.info(f"Flint visual overlay rendering completed: {output_overlay_path}")
             return output_overlay_path
         except Exception as e:
-            logger.warning(f"FFmpeg overlay rendering failed or ffmpeg absent: {str(e)}. Using fallback overlay video.")
-            import shutil
-            if os.path.exists(input_video_path) and os.path.getsize(input_video_path) > 100:
-                shutil.copy2(input_video_path, output_overlay_path)
-            else:
-                with open(output_overlay_path, "wb") as f:
-                    f.write(b"MOCK_OVERLAY_REEL_MP4")
-            return output_overlay_path
+            logger.warning(f"FFmpeg overlay rendering with audio failed ({str(e)}). Retrying without audio re-encode...")
+            cmd_no_a = [
+                "ffmpeg", "-y",
+                "-i", input_video_path,
+                "-vf", filter_str,
+                "-c:v", "libx264",
+                "-an",
+                output_overlay_path
+            ]
+            try:
+                subprocess.run(cmd_no_a, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                logger.info(f"Flint visual overlay rendering (video only) completed: {output_overlay_path}")
+                return output_overlay_path
+            except Exception as e2:
+                logger.error(f"FFmpeg overlay rendering failed completely: {str(e2)}")
+                import shutil
+                if os.path.exists(input_video_path) and os.path.getsize(input_video_path) > 100:
+                    shutil.copy2(input_video_path, output_overlay_path)
+                return output_overlay_path

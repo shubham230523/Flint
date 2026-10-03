@@ -78,7 +78,9 @@ class CaptionRenderer:
             "-i", input_video_path,
             "-vf", sub_filter,
             "-c:v", "libx264",
-            "-c:a", "copy",
+            "-preset", "fast",
+            "-c:a", "aac",
+            "-b:a", "128k",
             output_captioned_path
         ]
 
@@ -87,14 +89,25 @@ class CaptionRenderer:
             logger.info(f"Burned-in subtitle rendering completed: {output_captioned_path}")
             return output_captioned_path
         except Exception as e:
-            logger.warning(f"FFmpeg caption rendering failed or ffmpeg absent: {str(e)}. Using fallback captioned video.")
-            import shutil
-            if os.path.exists(input_video_path) and os.path.getsize(input_video_path) > 100:
-                shutil.copy2(input_video_path, output_captioned_path)
-            else:
-                with open(output_captioned_path, "wb") as f:
-                    f.write(b"MOCK_CAPTIONED_REEL_MP4")
-            return output_captioned_path
+            logger.warning(f"FFmpeg caption rendering with audio failed ({str(e)}). Retrying without audio re-encode...")
+            cmd_no_a = [
+                "ffmpeg", "-y",
+                "-i", input_video_path,
+                "-vf", sub_filter,
+                "-c:v", "libx264",
+                "-an",
+                output_captioned_path
+            ]
+            try:
+                subprocess.run(cmd_no_a, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                logger.info(f"Burned-in subtitle rendering (video only) completed: {output_captioned_path}")
+                return output_captioned_path
+            except Exception as e2:
+                logger.error(f"FFmpeg caption rendering failed completely: {str(e2)}")
+                import shutil
+                if os.path.exists(input_video_path) and os.path.getsize(input_video_path) > 100:
+                    shutil.copy2(input_video_path, output_captioned_path)
+                return output_captioned_path
 
     @staticmethod
     def _format_srt_timestamp(seconds: float) -> str:

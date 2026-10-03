@@ -27,10 +27,11 @@ class YouTubeDownloader:
         # Command using yt-dlp python library or CLI
         cmd = [
             "python", "-m", "yt_dlp",
-            "-f", "b/bestvideo+bestaudio/best",
+            "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
             "--merge-output-format", "mp4",
             "-o", target_video_path,
             "--no-playlist",
+            "--no-check-certificates",
             youtube_url
         ]
 
@@ -42,10 +43,11 @@ class YouTubeDownloader:
             try:
                 import yt_dlp
                 ydl_opts = {
-                    'format': 'b/bestvideo+bestaudio/best',
+                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                     'outtmpl': target_video_path,
                     'merge_output_format': 'mp4',
                     'noplaylist': True,
+                    'nocheckcertificate': True,
                     'quiet': True
                 }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
