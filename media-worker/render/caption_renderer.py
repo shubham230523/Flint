@@ -71,7 +71,7 @@ class CaptionRenderer:
 
         # Escape backslashes and colons for FFmpeg filter path
         escaped_srt = srt_path.replace("\\", "/").replace(":", "\\:")
-        sub_filter = f"subtitles='{escaped_srt}':force_style='Fontname=Arial,Fontsize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=3,Outline=2,Shadow=0,Alignment=2,MarginV=120'"
+        sub_filter = f"subtitles='{escaped_srt}':force_style='Fontname=Arial,Fontsize=12,PrimaryColour=&H00FFFFFF,BackColour=&H80000000,BorderStyle=3,Outline=1,Shadow=0,Alignment=2,MarginL=40,MarginR=40,MarginV=70'"
 
         cmd = [
             "ffmpeg", "-y",

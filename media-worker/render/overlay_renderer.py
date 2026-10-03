@@ -30,19 +30,19 @@ class OverlayRenderer:
 
         filters = []
 
-        # Hook overlay at top safe margin (15% down)
+        # Hook overlay at bottom safe margin with semi-transparent background
         if clean_hook:
             hook_draw = (
-                f"drawtext=text='{clean_hook}':x=(w-text_w)/2:y=h*0.15:"
-                f"fontsize=24:fontcolor=white:box=1:boxcolor=black@0.6:boxborderw=10"
+                f"drawtext=text='{clean_hook}':x=(w-text_w)/2:y=h-th-130:"
+                f"fontsize=14:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=8"
             )
             filters.append(hook_draw)
 
-        # Call-To-Action (CTA) overlay at bottom safe margin (80% down)
+        # Call-To-Action (CTA) overlay at bottom with standard padding
         if clean_cta:
             cta_draw = (
-                f"drawtext=text='{clean_cta}':x=(w-text_w)/2:y=h*0.80:"
-                f"fontsize=20:fontcolor=white:box=1:boxcolor=0xFF9F0A@0.8:boxborderw=8"
+                f"drawtext=text='{clean_cta}':x=(w-text_w)/2:y=h-th-50:"
+                f"fontsize=12:fontcolor=white:box=1:boxcolor=0xFF9F0A@0.7:boxborderw=6"
             )
             filters.append(cta_draw)
 
