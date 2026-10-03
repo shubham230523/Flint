@@ -225,14 +225,70 @@ fun YouTubeWorkspaceScreen(
         }
     }
 
+    fun parseTimestampsFromReference(ref: String, index: Int): Pair<Long, Long> {
+        try {
+            val regex = Regex("""(\d{1,2}):(\d{2})""")
+            val matches = regex.findAll(ref).toList()
+            if (matches.size >= 2) {
+                val startMin = matches[0].groupValues[1].toLong()
+                val startSec = matches[0].groupValues[2].toLong()
+                val endMin = matches[1].groupValues[1].toLong()
+                val endSec = matches[1].groupValues[2].toLong()
+
+                val startMs = (startMin * 60 + startSec) * 1000L
+                var endMs = (endMin * 60 + endSec) * 1000L
+                if (endMs <= startMs) {
+                    endMs = startMs + 30000L
+                }
+                return Pair(startMs, endMs)
+            }
+        } catch (_: Exception) {}
+
+        val startMs = index * 30000L
+        val endMs = startMs + 30000L
+        return Pair(startMs, endMs)
+    }
+
     fun launchStage2ReelWorkflow(opp: InstagramContentOpportunity? = null) {
         FlintLogger.i("YouTubeWorkspace", "==========================================================")
-        FlintLogger.i("YouTubeWorkspace", "STAGE 2 LAUNCHED: Transitioning to Reel Candidate Review Workflow")
+        FlintLogger.i("YouTubeWorkspace", "STAGE 2 LAUNCHED: Transitioning to Reel Candidate Review Workflow for Opportunity: '${opp?.title}'")
 
         val reelRanker = ReelCandidateRanker()
         val realSegments = processingResult?.transcript?.segments ?: emptyList()
 
-        val rawCandidates = if (realSegments.isNotEmpty()) {
+        val reelOpps = opportunities.filter { it.type == OpportunityType.REEL_IDEA }
+        val targetOpps = if (opp != null && !reelOpps.contains(opp)) {
+            listOf(opp) + reelOpps
+        } else if (reelOpps.isNotEmpty()) {
+            if (opp != null) listOf(opp) + (reelOpps - opp) else reelOpps
+        } else if (opp != null) {
+            listOf(opp)
+        } else emptyList()
+
+        val rawCandidates = if (targetOpps.isNotEmpty()) {
+            targetOpps.mapIndexed { idx, o ->
+                val (sMs, eMs) = parseTimestampsFromReference(o.sourceReference, idx)
+                val snippetText = realSegments.filter { seg ->
+                    seg.endTimeMs >= sMs && seg.startTimeMs <= eMs
+                }.joinToString(" ") { it.text }.ifBlank { o.description }
+
+                ReelCandidate(
+                    id = "cand_${o.id.ifBlank { "opp_${idx + 1}" }}",
+                    sourceId = processingResult?.source?.id ?: "src_yt_1",
+                    startTimeMs = sMs,
+                    endTimeMs = eMs,
+                    transcript = snippetText,
+                    title = o.title,
+                    hook = o.suggestedHook.ifBlank { "Key Insight: ${o.title}" },
+                    reason = o.description,
+                    contentType = ReelCandidateType.EDUCATIONAL,
+                    candidateScore = 0.98f - (idx * 0.05f),
+                    confidence = 0.92f,
+                    status = if (o == opp) ReelCandidateStatus.ACCEPTED else ReelCandidateStatus.DISCOVERED,
+                    ctaText = "Save & Share this Reel!"
+                )
+            }
+        } else if (realSegments.isNotEmpty()) {
             FlintLogger.i("YouTubeWorkspace", "Extracting candidates directly from real video transcript (${realSegments.size} segments)")
             val candidatesList = mutableListOf<ReelCandidate>()
             var currentText = ""
@@ -287,27 +343,13 @@ fun YouTubeWorkspaceScreen(
                     candidateScore = 0.95f,
                     confidence = 0.90f,
                     status = ReelCandidateStatus.DISCOVERED
-                ),
-                ReelCandidate(
-                    id = "cand_real_2",
-                    sourceId = processingResult?.source?.id ?: "src_real_1",
-                    startTimeMs = 30000L,
-                    endTimeMs = 60000L,
-                    transcript = "Channel: ${processingResult?.videoData?.channelName ?: "YouTube Source"} | $videoTitle",
-                    title = "Takeaway from ${processingResult?.videoData?.channelName ?: "Source"}",
-                    hook = "Here is what you need to know about $videoTitle",
-                    reason = "Highlighted key channel breakdown",
-                    contentType = ReelCandidateType.HOW_TO,
-                    candidateScore = 0.88f,
-                    confidence = 0.85f,
-                    status = ReelCandidateStatus.DISCOVERED
                 )
             )
         }
 
         val ranked = reelRanker.rankCandidates(rawCandidates)
         reelCandidates = ranked
-        FlintLogger.i("YouTubeWorkspace", "STEP 4: Ranked ${ranked.size} Reel Candidates for Creator Review")
+        FlintLogger.i("YouTubeWorkspace", "STEP 4: Ranked ${ranked.size} unique Reel Candidates for Creator Review")
         currentStep = YouTubeWorkflowStep.REEL_CANDIDATES_REVIEW
     }
 

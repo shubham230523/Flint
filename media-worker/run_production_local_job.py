@@ -110,9 +110,21 @@ def run_production_job(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Run Production Local Reel Job")
+    parser.add_argument("--job-id", type=str, default="job_prod_local_1", help="Job ID")
     parser.add_argument("--url", type=str, default="https://www.youtube.com/watch?v=45K3zHckCnQ", help="YouTube Video URL")
     parser.add_argument("--start", type=float, default=0.0, help="Clip start timestamp (seconds)")
     parser.add_argument("--end", type=float, default=35.0, help="Clip end timestamp (seconds)")
+    parser.add_argument("--hook", type=str, default="", help="Hook text overlay")
+    parser.add_argument("--cta", type=str, default="Save & Share this Reel!", help="CTA text overlay")
+    parser.add_argument("--output", type=str, default=None, help="Output MP4 file path")
     args = parser.parse_args()
 
-    run_production_job(youtube_url=args.url, start_sec=args.start, end_sec=args.end)
+    run_production_job(
+        job_id=args.job_id,
+        youtube_url=args.url,
+        start_sec=args.start,
+        end_sec=args.end,
+        hook_text=args.hook,
+        cta_text=args.cta,
+        output_path=args.output
+    )

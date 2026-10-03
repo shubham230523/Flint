@@ -69,15 +69,19 @@ actual suspend fun executeLocalMediaRenderJob(
     val outputFile = File(reelsDir, "${candidateId}_final_reel.mp4")
 
     val urlToUse = youtubeUrl.ifBlank { "https://www.youtube.com/watch?v=45K3zHckCnQ" }
-    FlintLogger.i("LocalMediaWorker", "Executing local Python Reel render process for URL=$urlToUse [$startSec -> $endSec]")
+    FlintLogger.i("LocalMediaWorker", "Executing local Python Reel render process for candidateId=$candidateId URL=$urlToUse [$startSec -> $endSec]")
 
     try {
         val pb = ProcessBuilder(
             "python",
             "media-worker/run_production_local_job.py",
+            "--job-id", candidateId,
             "--url", urlToUse,
             "--start", startSec.toString(),
-            "--end", endSec.toString()
+            "--end", endSec.toString(),
+            "--hook", hookText,
+            "--cta", ctaText,
+            "--output", outputFile.absolutePath
         )
         pb.redirectErrorStream(true)
         val process = pb.start()
