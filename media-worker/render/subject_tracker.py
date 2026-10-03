@@ -66,6 +66,7 @@ class SubjectTracker:
             "ffmpeg", "-y",
             "-i", input_clip_path,
             "-vf", crop_filter,
+            "-map_metadata", "-1",
             "-c:v", "libx264",
             "-preset", "fast",
             "-c:a", "aac",

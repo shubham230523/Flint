@@ -27,6 +27,7 @@ class ClipExtractor:
             "-ss", f"{start_sec:.3f}",
             "-to", f"{end_sec:.3f}",
             "-i", source_path,
+            "-map_metadata", "-1",
             "-c:v", "libx264",
             "-c:a", "aac",
             "-strict", "experimental",

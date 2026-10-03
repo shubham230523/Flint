@@ -77,6 +77,7 @@ class CaptionRenderer:
             "ffmpeg", "-y",
             "-i", input_video_path,
             "-vf", sub_filter,
+            "-map_metadata", "-1",
             "-c:v", "libx264",
             "-preset", "fast",
             "-c:a", "aac",
