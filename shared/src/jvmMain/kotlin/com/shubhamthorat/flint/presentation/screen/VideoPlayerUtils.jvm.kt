@@ -108,6 +108,15 @@ actual suspend fun executeLocalMediaRenderJob(
 }
 
 actual suspend fun preparePreviewFramesAndAudio(videoPath: String): Int = withContext(Dispatchers.IO) {
+    // Release existing audio clip lock if open
+    try {
+        activeAudioClip?.let {
+            if (it.isRunning) it.stop()
+            if (it.isOpen) it.close()
+        }
+        activeAudioClip = null
+    } catch (_: Exception) {}
+
     val fileToUse = if (File(videoPath).exists() && File(videoPath).length() > 1000L) {
         File(videoPath)
     } else {
@@ -118,7 +127,13 @@ actual suspend fun preparePreviewFramesAndAudio(videoPath: String): Int = withCo
 
     val framesDir = File("C:/tmp/flint_media/preview_frames")
     framesDir.mkdirs()
+    // Clear old preview frame images
+    framesDir.listFiles()?.forEach { it.delete() }
+
     val audioFile = File("C:/tmp/flint_media/preview_audio.wav")
+    if (audioFile.exists()) {
+        audioFile.delete()
+    }
 
     try {
         // Extract 30 frame images (1 fps)

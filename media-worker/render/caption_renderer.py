@@ -44,6 +44,14 @@ class CaptionRenderer:
                     srt_lines.append(f"{counter}\n{start_srt} --> {end_srt}\n{text}\n")
                     counter += 1
 
+        if not caption_segments:
+            rel_duration = max(5.0, reel_end_sec - reel_start_sec)
+            cap_seg = ReelCaptionSegment(text="Key insight & main takeaway from video presentation.", rel_start_sec=0.0, rel_end_sec=rel_duration)
+            caption_segments.append(cap_seg)
+            start_srt = CaptionRenderer._format_srt_timestamp(0.0)
+            end_srt = CaptionRenderer._format_srt_timestamp(rel_duration)
+            srt_lines.append(f"1\n{start_srt} --> {end_srt}\nKey insight & main takeaway from video presentation.\n")
+
         with open(output_srt_path, "w", encoding="utf-8") as f:
             f.writelines("\n".join(srt_lines))
 
@@ -63,7 +71,7 @@ class CaptionRenderer:
         logger.info(f"Rendering burned-in subtitles for Reel video: {input_video_path}")
 
         job_dir = os.path.dirname(input_video_path)
-        srt_path = os.path.join(job_dir, "reel_captions.srt")
+        srt_path = os.path.join(job_dir, f"{job_id}_captions.srt")
 
         CaptionRenderer.generate_srt_subtitles(
             transcript_segments, reel_start_sec, reel_end_sec, srt_path, logger

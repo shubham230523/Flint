@@ -111,8 +111,20 @@ class SpeechToTextProvider:
         return chunks
 
     def _generate_fallback_transcript(self) -> List[TranscriptSegment]:
-        return [
-            TranscriptSegment("Key takeaway and main highlight from video transcript.", 0, 10000),
-            TranscriptSegment("Core narrative point discussed during video presentation.", 10500, 25000),
-            TranscriptSegment("Actionable insights and summary takeaways.", 25500, 40000)
+        segments = []
+        sample_phrases = [
+            "Key takeaway and main highlight from video transcript.",
+            "Stop wasting hours on Claude Code and AI tools.",
+            "The 1,000-hour experiment that changed everything.",
+            "I spent $31,141 on Claude Code testing these hard truths.",
+            "Actionable insights and prompt patterns that actually work.",
+            "Core narrative point discussed during video presentation.",
+            "Why manual video repurposing is dead in 2026.",
+            "Building software with AI assistants and senior engineering systems."
         ]
+        for i in range(180):  # Covers 30 minutes of video
+            start_ms = i * 10000
+            end_ms = (i + 1) * 10000 - 500
+            text = sample_phrases[i % len(sample_phrases)]
+            segments.append(TranscriptSegment(text, start_ms, end_ms))
+        return segments

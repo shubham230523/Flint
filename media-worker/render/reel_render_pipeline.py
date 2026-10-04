@@ -30,17 +30,17 @@ class ReelRenderPipeline:
 
         # Stage 1: Trim Segment (25%)
         if on_progress: on_progress(25, "Extracting segment clip...")
-        raw_clip = os.path.join(job_dir, "stage1_clip.mp4")
+        raw_clip = os.path.join(job_dir, f"{job_id}_stage1_clip.mp4")
         ClipExtractor.extract_clip(source_video_path, start_sec, end_sec, raw_clip, job_id=job_id)
 
         # Stage 2: 9:16 Reframe & Speaker Tracking (45%)
         if on_progress: on_progress(45, "Tracking speaker & reframing to 9:16...")
-        reframed_clip = os.path.join(job_dir, "stage2_916.mp4")
+        reframed_clip = os.path.join(job_dir, f"{job_id}_stage2_916.mp4")
         SubjectTracker.reframe_to_vertical_9_16(raw_clip, reframed_clip, job_id=job_id)
 
         # Stage 3: Burned-in Subtitle Captions (65%)
         if on_progress: on_progress(65, "Rendering burned-in subtitles...")
-        captioned_clip = os.path.join(job_dir, "stage3_captions.mp4")
+        captioned_clip = os.path.join(job_dir, f"{job_id}_stage3_captions.mp4")
         CaptionRenderer.render_burned_captions(
             reframed_clip, transcript_segments, start_sec, end_sec, captioned_clip, job_id=job_id
         )

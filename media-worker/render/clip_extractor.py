@@ -25,7 +25,7 @@ class ClipExtractor:
         cmd = [
             "ffmpeg", "-y",
             "-ss", f"{start_sec:.3f}",
-            "-to", f"{end_sec:.3f}",
+            "-t", f"{duration_sec:.3f}",
             "-i", source_path,
             "-map_metadata", "-1",
             "-c:v", "libx264",
