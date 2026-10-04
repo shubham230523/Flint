@@ -225,7 +225,7 @@ fun YouTubeWorkspaceScreen(
         }
     }
 
-    fun parseTimestampsFromReference(ref: String, index: Int): Pair<Long, Long> {
+    fun parseTimestampsFromReference(ref: String): Pair<Long, Long> {
         try {
             val regex = Regex("""(\d{1,2}):(\d{2})""")
             val matches = regex.findAll(ref).toList()
@@ -244,9 +244,77 @@ fun YouTubeWorkspaceScreen(
             }
         } catch (_: Exception) {}
 
-        val startMs = index * 30000L
-        val endMs = startMs + 30000L
+        return Pair(-1L, -1L)
+    }
+
+    fun findBestTimestampForOpportunity(
+        opp: InstagramContentOpportunity,
+        fixedIndex: Int,
+        realSegments: List<com.shubhamthorat.flint.domain.model.TranscriptSegment>
+    ): Pair<Long, Long> {
+        // 1. Check explicit timestamps from AI
+        if (opp.startTimeMs != null && opp.endTimeMs != null && opp.endTimeMs > opp.startTimeMs) {
+            return Pair(opp.startTimeMs, opp.endTimeMs)
+        }
+
+        // 2. Check explicit time range in sourceReference (e.g. "Transcript 02:15 - 02:45")
+        val parsedRef = parseTimestampsFromReference(opp.sourceReference)
+        if (parsedRef.first >= 0L) {
+            return parsedRef
+        }
+
+        // 3. Keyword Relevance Matching against transcript
+        if (realSegments.isNotEmpty()) {
+            val stopWords = setOf("this", "that", "with", "from", "have", "your", "what", "here", "there", "about", "more", "just", "some", "like", "will", "been", "would", "they", "them", "which", "code", "claude")
+            val rawKeywords = "${opp.title} ${opp.suggestedHook} ${opp.description}"
+                .lowercase()
+                .replace(Regex("""[^\w\s]"""), "")
+                .split(Regex("""\s+"""))
+                .filter { it.length > 3 && !stopWords.contains(it) }
+                .distinct()
+
+            if (rawKeywords.isNotEmpty()) {
+                val totalDurationMs = realSegments.last().endTimeMs
+                val windowSizeMs = 30000L
+                val stepMs = 15000L
+                var bestStartMs = -1L
+                var maxMatches = 0
+
+                var wStart = 0L
+                while (wStart + windowSizeMs <= totalDurationMs + 15000L) {
+                    val wEnd = wStart + windowSizeMs
+                    val textInWindow = realSegments.filter { seg ->
+                        seg.endTimeMs >= wStart && seg.startTimeMs <= wEnd
+                    }.joinToString(" ") { it.text.lowercase() }
+
+                    val matchCount = rawKeywords.count { textInWindow.contains(it) }
+                    if (matchCount > maxMatches) {
+                        maxMatches = matchCount
+                        bestStartMs = wStart
+                    }
+                    wStart += stepMs
+                }
+
+                if (bestStartMs >= 0L && maxMatches >= 1) {
+                    return Pair(bestStartMs, bestStartMs + windowSizeMs)
+                }
+            }
+        }
+
+        // 4. Fixed Staggered Offset per Opportunity Index (Opp 0 = 0-30s, Opp 1 = 45-75s, Opp 2 = 90-120s, Opp 3 = 135-165s)
+        val maxDurationMs = realSegments.lastOrNull()?.endTimeMs ?: 300000L
+        val startMs = (fixedIndex * 45000L).coerceAtMost(maxOf(0L, maxDurationMs - 30000L))
+        val endMs = (startMs + 30000L).coerceAtMost(maxDurationMs)
         return Pair(startMs, endMs)
+    }
+
+    fun formatMsToTimestamp(ms: Long): String {
+        val totalSec = ms / 1000L
+        val mins = totalSec / 60L
+        val secs = totalSec % 60L
+        val minsStr = if (mins < 10) "0$mins" else "$mins"
+        val secsStr = if (secs < 10) "0$secs" else "$secs"
+        return "$minsStr:$secsStr"
     }
 
     fun launchStage2ReelWorkflow(opp: InstagramContentOpportunity? = null) {
@@ -266,14 +334,16 @@ fun YouTubeWorkspaceScreen(
         } else emptyList()
 
         val rawCandidates = if (targetOpps.isNotEmpty()) {
-            targetOpps.mapIndexed { idx, o ->
-                val (sMs, eMs) = parseTimestampsFromReference(o.sourceReference, idx)
+            targetOpps.map { o ->
+                val fixedIdx = opportunities.indexOf(o).coerceAtLeast(0)
+                val (sMs, eMs) = findBestTimestampForOpportunity(o, fixedIdx, realSegments)
+
                 val snippetText = realSegments.filter { seg ->
                     seg.endTimeMs >= sMs && seg.startTimeMs <= eMs
                 }.joinToString(" ") { it.text }.ifBlank { o.description }
 
                 ReelCandidate(
-                    id = "cand_${o.id.ifBlank { "opp_${idx + 1}" }}",
+                    id = "cand_${o.id.ifBlank { "opp_${fixedIdx + 1}" }}",
                     sourceId = processingResult?.source?.id ?: "src_yt_1",
                     startTimeMs = sMs,
                     endTimeMs = eMs,
@@ -282,7 +352,7 @@ fun YouTubeWorkspaceScreen(
                     hook = o.suggestedHook.ifBlank { "Key Insight: ${o.title}" },
                     reason = o.description,
                     contentType = ReelCandidateType.EDUCATIONAL,
-                    candidateScore = 0.98f - (idx * 0.05f),
+                    candidateScore = 0.98f - (fixedIdx * 0.05f),
                     confidence = 0.92f,
                     status = if (o == opp) ReelCandidateStatus.ACCEPTED else ReelCandidateStatus.DISCOVERED,
                     ctaText = "Save & Share this Reel!"
@@ -655,6 +725,7 @@ fun YouTubeWorkspaceScreen(
             YouTubeWorkflowStep.OPPORTUNITIES_VIEW -> {
                 val proc = processingResult
                 val ana = contentAnalysis
+                val realSegments = proc?.transcript?.segments ?: emptyList()
 
                 if (proc != null && ana != null) {
                     Row(
@@ -770,10 +841,20 @@ fun YouTubeWorkspaceScreen(
                                         onClick = {},
                                         label = opp.type.name.replace('_', ' ')
                                     )
+
+                                    val fixedIdx = opportunities.indexOf(opp).coerceAtLeast(0)
+                                    val (sMs, eMs) = findBestTimestampForOpportunity(opp, fixedIdx, realSegments)
+                                    val refLabel = if (opp.sourceReference.contains(":") || opp.sourceReference.contains("s")) {
+                                        opp.sourceReference
+                                    } else {
+                                        "⏱️ ${formatMsToTimestamp(sMs)} - ${formatMsToTimestamp(eMs)}"
+                                    }
+
                                     Text(
-                                        text = opp.sourceReference,
+                                        text = refLabel,
                                         style = FlintTheme.typography.labelSmall,
-                                        color = FlintTheme.colors.textSecondary
+                                        color = FlintTheme.colors.primary,
+                                        fontWeight = FontWeight.Medium
                                     )
                                 }
 

@@ -89,7 +89,8 @@ class GenerateInstagramOpportunitiesUseCase(
             2. NEVER use generic placeholder words like "Topic 1", "Specific Topic Name", "Key takeaway 1", "Hook 1", or "Generic Idea".
             3. Craft strong, viral Instagram hooks (e.g. "I spent \$31k on Claude Code so you don't have to.", "The 3 Claude Code hacks that changed how I build software.").
             4. Diversify content types across REEL_IDEA, CAROUSEL, STORY_SEQUENCE, QUOTE_POST, EDUCATIONAL_POST, QUESTION_POST.
-            5. Output MUST be valid raw JSON adhering strictly to:
+            5. For every REEL_IDEA, provide a specific video timestamp range in sourceReference (e.g. "Transcript 02:15 - 02:45" or "Timestamp 05:00 - 05:30") pointing to where this exact topic appears in the video.
+            6. Output MUST be valid raw JSON adhering strictly to:
             
             {
               "opportunities": [
@@ -98,8 +99,10 @@ class GenerateInstagramOpportunitiesUseCase(
                   "type": "REEL_IDEA",
                   "title": "Engaging Post Title about $topicsStr",
                   "description": "Clear explanation of why this post delivers value",
-                  "sourceReference": "Key video takeaway",
-                  "suggestedHook": "Viral opening hook line"
+                  "sourceReference": "Transcript 02:15 - 02:45",
+                  "suggestedHook": "Viral opening hook line",
+                  "startTimeMs": 135000,
+                  "endTimeMs": 165000
                 }
               ]
             }

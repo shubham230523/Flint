@@ -38,7 +38,9 @@ data class InstagramContentOpportunity(
     val title: String,
     val description: String,
     val sourceReference: String = "",
-    val suggestedHook: String = ""
+    val suggestedHook: String = "",
+    val startTimeMs: Long? = null,
+    val endTimeMs: Long? = null
 )
 
 @Serializable
@@ -86,6 +88,8 @@ data class OpportunityListContainer(
                             val description = LenientJsonParser.extractString(item, "description", "body", "details", "summary")
                             val sourceRef = LenientJsonParser.extractString(item, "sourceReference", "source_reference", "source")
                             val hook = LenientJsonParser.extractString(item, "suggestedHook", "suggested_hook", "hook")
+                            val startMs = LenientJsonParser.extractString(item, "startTimeMs", "start_time_ms", "startMs").toLongOrNull()
+                            val endMs = LenientJsonParser.extractString(item, "endTimeMs", "end_time_ms", "endMs").toLongOrNull()
 
                             if (title.isNotBlank() || description.isNotBlank()) {
                                 list.add(
@@ -95,7 +99,9 @@ data class OpportunityListContainer(
                                         title = title.ifBlank { "Instagram Post Idea" },
                                         description = description.ifBlank { title },
                                         sourceReference = sourceRef,
-                                        suggestedHook = hook
+                                        suggestedHook = hook,
+                                        startTimeMs = startMs,
+                                        endTimeMs = endMs
                                     )
                                 )
                             }
